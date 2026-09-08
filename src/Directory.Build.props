@@ -1,0 +1,25 @@
+<Project>
+
+    <PropertyGroup Label="Framework">
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup Label="Build">
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Label="Assembly">
+        <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+        <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+        <Product>Home Base System</Product>
+        <Company>Home Base System</Company>
+        <Authors>Elisa Noeller</Authors>
+        <NeutralLanguage>de-DE</NeutralLanguage>
+    </PropertyGroup>
+
+</Project>
