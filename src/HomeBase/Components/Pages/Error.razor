@@ -1,19 +1,21 @@
-﻿@page "/Error"
+@page "/Error"
 @using System.Diagnostics
+@attribute [ExcludeFromInteractiveRouting]
+@inject IStringLocalizer<AppStrings> Localizer
 
-<PageTitle>Error</PageTitle>
+<PageTitle>@Localizer["Error.Title"]</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<MudText Typo="Typo.h4" HtmlTag="h1" Color="Color.Error">@Localizer["Error.Title"]</MudText>
+<MudText Typo="Typo.h5" Color="Color.Error" Class="mb-4">@Localizer["Error.Message"]</MudText>
 
 @if (ShowRequestId)
 {
-    <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
-    </p>
+    <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Class="mb-4">
+        <strong>@Localizer["Error.RequestId"]:</strong> <code>@RequestId</code>
+    </MudAlert>
 }
 
-<h3>Development Mode</h3>
+<MudText Typo="Typo.h6" Class="mt-6">Development Mode</MudText>
 <p>
     Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
 </p>

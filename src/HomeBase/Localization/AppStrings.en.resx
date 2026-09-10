@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common.Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Common.AmountRequired" xml:space="preserve">
+    <value>Please enter an amount greater than 0.</value>
+  </data>
+  <data name="Common.MoneyFormat" xml:space="preserve">
+    <value>€{0}</value>
+  </data>
+  <data name="Nav.Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Nav.Stock" xml:space="preserve">
+    <value>Stock</value>
+  </data>
+  <data name="Nav.Products" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="Nav.Menu" xml:space="preserve">
+    <value>Navigation menu</value>
+  </data>
+  <data name="Layout.DarkMode" xml:space="preserve">
+    <value>Dark theme</value>
+  </data>
+  <data name="Layout.LightMode" xml:space="preserve">
+    <value>Light theme</value>
+  </data>
+  <data name="Layout.About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Layout.UnhandledError" xml:space="preserve">
+    <value>An unhandled error has occurred.</value>
+  </data>
+  <data name="Layout.Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Home.LotsInStock" xml:space="preserve">
+    <value>Lots in stock</value>
+  </data>
+  <data name="Home.ExpiringSoon" xml:space="preserve">
+    <value>expiring within 7 days</value>
+  </data>
+  <data name="Home.AlreadyExpired" xml:space="preserve">
+    <value>already expired</value>
+  </data>
+  <data name="Home.UseNext" xml:space="preserve">
+    <value>Use next</value>
+  </data>
+  <data name="Home.NoLocation" xml:space="preserve">
+    <value>no location</value>
+  </data>
+  <data name="Products.Title" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="Products.New" xml:space="preserve">
+    <value>New product</value>
+  </data>
+  <data name="Products.SearchPlaceholder" xml:space="preserve">
+    <value>Name, brand or barcode</value>
+  </data>
+  <data name="Products.Empty" xml:space="preserve">
+    <value>No products found. Create one, then you can book stock against it.</value>
+  </data>
+  <data name="Products.PerPackage" xml:space="preserve">
+    <value>{0} per package</value>
+  </data>
+  <data name="Products.InStock" xml:space="preserve">
+    <value>in stock</value>
+  </data>
+  <data name="ProductEdit.Title" xml:space="preserve">
+    <value>Edit product</value>
+  </data>
+  <data name="ProductEdit.Fallback" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="ProductEdit.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ProductEdit.Brand" xml:space="preserve">
+    <value>Brand</value>
+  </data>
+  <data name="ProductEdit.Gtin" xml:space="preserve">
+    <value>EAN / barcode</value>
+  </data>
+  <data name="ProductEdit.Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="ProductEdit.NoCategory" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="ProductEdit.DefaultLocation" xml:space="preserve">
+    <value>Default location</value>
+  </data>
+  <data name="ProductEdit.NoDefaultLocation" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="ProductEdit.DefaultLocationHint" xml:space="preserve">
+    <value>Saves picking one every time you book in.</value>
+  </data>
+  <data name="ProductEdit.BaseUnit" xml:space="preserve">
+    <value>Base unit</value>
+  </data>
+  <data name="ProductEdit.PackageSize" xml:space="preserve">
+    <value>Package size ({0})</value>
+  </data>
+  <data name="ProductEdit.IsFood" xml:space="preserve">
+    <value>Food</value>
+  </data>
+  <data name="ProductEdit.MinStock" xml:space="preserve">
+    <value>Minimum stock</value>
+  </data>
+  <data name="ProductEdit.TargetStock" xml:space="preserve">
+    <value>Target stock</value>
+  </data>
+  <data name="ProductEdit.ShelfLife" xml:space="preserve">
+    <value>Shelf life (days)</value>
+  </data>
+  <data name="ProductEdit.ShelfLifeHint" xml:space="preserve">
+    <value>Optional leave empty when there is no best-before date.</value>
+  </data>
+  <data name="ProductEdit.Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Stock.Title" xml:space="preserve">
+    <value>Stock</value>
+  </data>
+  <data name="Stock.FilterAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Stock.FilterExpiring" xml:space="preserve">
+    <value>Expiring ({0} days)</value>
+  </data>
+  <data name="Stock.Empty" xml:space="preserve">
+    <value>No stock recorded yet.</value>
+  </data>
+  <data name="Stock.EmptyForFilter" xml:space="preserve">
+    <value>Nothing expires in this period.</value>
+  </data>
+  <data name="Stock.NoLocation" xml:space="preserve">
+    <value>No location</value>
+  </data>
+  <data name="Stock.OpenedBadge" xml:space="preserve">
+    <value>opened</value>
+  </data>
+  <data name="Stock.MarkOpened" xml:space="preserve">
+    <value>Mark opened</value>
+  </data>
+  <data name="Stock.Consume" xml:space="preserve">
+    <value>Consumed</value>
+  </data>
+  <data name="Stock.Waste" xml:space="preserve">
+    <value>Thrown away</value>
+  </data>
+  <data name="Stock.AmountLabel" xml:space="preserve">
+    <value>Amount in {0} ({1})</value>
+  </data>
+  <data name="Stock.AmountConsumed" xml:space="preserve">
+    <value>consumed</value>
+  </data>
+  <data name="Stock.AmountWasted" xml:space="preserve">
+    <value>thrown away</value>
+  </data>
+  <data name="Stock.Book" xml:space="preserve">
+    <value>Book</value>
+  </data>
+  <data name="Stock.BookAll" xml:space="preserve">
+    <value>All ({0})</value>
+  </data>
+  <data name="Stock.PartiallyBooked" xml:space="preserve">
+    <value>Only {0} was available {1} was missing.</value>
+  </data>
+  <data name="Stock.NoBestBefore" xml:space="preserve">
+    <value>no best-before date</value>
+  </data>
+  <data name="Stock.ExpiredSince" xml:space="preserve">
+    <value>expired {0} days ago</value>
+  </data>
+  <data name="Stock.ExpiresToday" xml:space="preserve">
+    <value>expires today</value>
+  </data>
+  <data name="Stock.ExpiresTomorrow" xml:space="preserve">
+    <value>expires tomorrow</value>
+  </data>
+  <data name="Stock.DaysLeft" xml:space="preserve">
+    <value>{0} days left</value>
+  </data>
+  <data name="BookIn.Title" xml:space="preserve">
+    <value>Book in</value>
+  </data>
+  <data name="BookIn.SearchPlaceholder" xml:space="preserve">
+    <value>Search products name, brand or barcode</value>
+  </data>
+  <data name="BookIn.NoMatch" xml:space="preserve">
+    <value>No product found.</value>
+  </data>
+  <data name="BookIn.CreateProduct" xml:space="preserve">
+    <value>Create a new product</value>
+  </data>
+  <data name="BookIn.PackageSize" xml:space="preserve">
+    <value>Package {0}</value>
+  </data>
+  <data name="BookIn.CurrentStock" xml:space="preserve">
+    <value>Stock {0}</value>
+  </data>
+  <data name="BookIn.OtherProduct" xml:space="preserve">
+    <value>Different product</value>
+  </data>
+  <data name="BookIn.Packages" xml:space="preserve">
+    <value>Packages</value>
+  </data>
+  <data name="BookIn.Quantity" xml:space="preserve">
+    <value>Amount ({0})</value>
+  </data>
+  <data name="BookIn.Location" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="BookIn.NoLocation" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="BookIn.BestBefore" xml:space="preserve">
+    <value>Best-before date</value>
+  </data>
+  <data name="BookIn.ShelfLifeHint" xml:space="preserve">
+    <value>Prefilled with {0} days of shelf life adjust as needed.</value>
+  </data>
+  <data name="BookIn.NoBestBeforeHint" xml:space="preserve">
+    <value>Leave empty when there is no best-before date. That is a valid state.</value>
+  </data>
+  <data name="Catalog.NameRequired" xml:space="preserve">
+    <value>A name is required.</value>
+  </data>
+  <data name="Catalog.GtinTaken" xml:space="preserve">
+    <value>Barcode {0} already belongs to another product.</value>
+  </data>
+  <data name="Unit.Kilogram.Abbreviation" xml:space="preserve">
+    <value>kg</value>
+  </data>
+  <data name="Unit.Gram.Abbreviation" xml:space="preserve">
+    <value>g</value>
+  </data>
+  <data name="Unit.Liter.Abbreviation" xml:space="preserve">
+    <value>l</value>
+  </data>
+  <data name="Unit.Milliliter.Abbreviation" xml:space="preserve">
+    <value>ml</value>
+  </data>
+  <data name="Unit.Piece.Abbreviation" xml:space="preserve">
+    <value>pcs</value>
+  </data>
+  <data name="Unit.Gram.Name" xml:space="preserve">
+    <value>Grams</value>
+  </data>
+  <data name="Unit.Milliliter.Name" xml:space="preserve">
+    <value>Milliliters</value>
+  </data>
+  <data name="Unit.Piece.Name" xml:space="preserve">
+    <value>Pieces</value>
+  </data>
+  <data name="Zone.Fridge" xml:space="preserve">
+    <value>Fridge</value>
+  </data>
+  <data name="Zone.Freezer" xml:space="preserve">
+    <value>Freezer</value>
+  </data>
+  <data name="Zone.Ambient" xml:space="preserve">
+    <value>Pantry</value>
+  </data>
+  <data name="Zone.Room" xml:space="preserve">
+    <value>Room</value>
+  </data>
+  <data name="Error.Title" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Error.Message" xml:space="preserve">
+    <value>An error occurred while processing your request.</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>Request ID</value>
+  </data>
+  <data name="NotFound.Title" xml:space="preserve">
+    <value>Not found</value>
+  </data>
+  <data name="NotFound.Message" xml:space="preserve">
+    <value>Sorry, the content you are looking for does not exist.</value>
+  </data>
+  <data name="Reconnect.Rejoining" xml:space="preserve">
+    <value>Rejoining the server…</value>
+  </data>
+  <data name="Reconnect.RetryIn" xml:space="preserve">
+    <value>Rejoin failed… trying again in</value>
+  </data>
+  <data name="Reconnect.Seconds" xml:space="preserve">
+    <value>seconds.</value>
+  </data>
+  <data name="Reconnect.Failed" xml:space="preserve">
+    <value>Failed to rejoin.</value>
+  </data>
+  <data name="Reconnect.PleaseRetry" xml:space="preserve">
+    <value>Please retry or reload the page.</value>
+  </data>
+  <data name="Reconnect.Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="Reconnect.Paused" xml:space="preserve">
+    <value>The session has been paused by the server.</value>
+  </data>
+  <data name="Reconnect.ResumeFailed" xml:space="preserve">
+    <value>Failed to resume the session.</value>
+  </data>
+  <data name="Reconnect.Resume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+</root>

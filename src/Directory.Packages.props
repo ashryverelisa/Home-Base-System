@@ -5,9 +5,15 @@
         <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     </PropertyGroup>
 
+    <ItemGroup Label="User Interface">
+        <PackageVersion Include="MudBlazor" Version="9.9.0" />
+    </ItemGroup>
+
     <ItemGroup Label="Entity Framework Core">
         <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
+        <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     </ItemGroup>
 

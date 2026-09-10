@@ -1,0 +1,48 @@
+@using System.Globalization
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<MudMenu Label="@Abbreviation(CultureInfo.CurrentUICulture)"
+         StartIcon="@Icons.Material.Filled.Translate"
+         Variant="Variant.Text"
+         Color="Color.Inherit"
+         AriaLabel="@Localizer["Common.Language"]"
+         Dense="true"
+         AnchorOrigin="Origin.BottomRight"
+         TransformOrigin="Origin.TopRight">
+    @foreach (var culture in SupportedCultures.All)
+    {
+        <MudMenuItem Icon="@(IsCurrent(culture) ? Icons.Material.Filled.Check : null)"
+                     Disabled="IsCurrent(culture)"
+                     OnClick="() => Switch(culture)">
+            @Name(culture)
+        </MudMenuItem>
+    }
+</MudMenu>
+
+@code {
+    private static bool IsCurrent(CultureInfo culture) =>
+        string.Equals(
+            culture.Name,
+            CultureInfo.CurrentUICulture.Name,
+            StringComparison.OrdinalIgnoreCase);
+
+    private static string Abbreviation(CultureInfo culture) =>
+        culture.TwoLetterISOLanguageName.ToUpperInvariant();
+    
+    private static string Name(CultureInfo culture) =>
+        culture.Parent.NativeName is { Length: > 0 } name ? name : culture.NativeName;
+
+    private void Switch(CultureInfo culture) =>
+        Navigation.NavigateTo(SwitchHref(culture), forceLoad: true);
+
+    private string SwitchHref(CultureInfo culture) =>
+        QueryHelpers.AddQueryString(
+            CultureEndpoints.SetCulturePath,
+            new Dictionary<string, string?>
+            {
+                ["culture"] = culture.Name,
+                ["redirectUri"] = $"/{Navigation.ToBaseRelativePath(Navigation.Uri)}",
+            });
+}

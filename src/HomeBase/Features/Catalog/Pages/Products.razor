@@ -1,0 +1,70 @@
+@page "/products"
+@implements IDisposable
+@inject CatalogService Catalog
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Products.Title"]</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">@Localizer["Products.Title"]</MudText>
+    <MudButton Href="/products/new"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.Add">
+        @Localizer["Products.New"]
+    </MudButton>
+</div>
+
+<MudTextField T="string"
+              Value="_term"
+              ValueChanged="SearchAsync"
+              Immediate="true"
+              DebounceInterval="200"
+              Clearable="true"
+              Variant="Variant.Outlined"
+              Placeholder="@Localizer["Products.SearchPlaceholder"]"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              Class="mb-4"/>
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else if (_rows.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["Products.Empty"]</MudAlert>
+}
+else
+{
+    <MudPaper Outlined="true">
+        <MudList T="string">
+            @foreach (var row in _rows)
+            {
+                <MudListItem T="string" Href="@($"/products/{row.Id}")">
+                    <div class="d-flex justify-space-between align-start gap-3">
+                        <div>
+                            <MudText Typo="Typo.body1"><b>@row.Name</b></MudText>
+                            <MudText Typo="Typo.caption">
+                                @if (!string.IsNullOrWhiteSpace(row.Brand))
+                                {
+                                    <span>@row.Brand · </span>
+                                }
+                                <span>@row.CategoryName</span>
+                                <span> · @Localizer["Products.PerPackage", Units.Format(row.PackageSize, row.BaseUnit)]</span>
+                            </MudText>
+                        </div>
+                        <div class="text-right flex-none">
+                            <MudText Typo="Typo.body1"
+                                     Color="@(row.IsBelowMinimum ? Color.Error : Color.Inherit)">
+                                <b>@Units.Format(row.StockBase, row.BaseUnit)</b>
+                            </MudText>
+                            <MudText Typo="Typo.caption">@Localizer["Products.InStock"]</MudText>
+                        </div>
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}

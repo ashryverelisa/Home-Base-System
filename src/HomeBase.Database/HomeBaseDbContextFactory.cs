@@ -7,12 +7,8 @@ public class HomeBaseDbContextFactory : IDesignTimeDbContextFactory<HomeBaseDbCo
 {
     public HomeBaseDbContext CreateDbContext(string[] args)
     {
-        var connectionString =
-            Environment.GetEnvironmentVariable("HOMEBASE_DB")
-            ?? "Host=localhost;Port=5432;Database=homebase;Username=homebase;Password=homebase";
-
         var options = new DbContextOptionsBuilder<HomeBaseDbContext>()
-            .UseNpgsql(connectionString)
+            .UseNpgsql(HomeBaseConnection.Resolve())
             .Options;
 
         return new HomeBaseDbContext(options);

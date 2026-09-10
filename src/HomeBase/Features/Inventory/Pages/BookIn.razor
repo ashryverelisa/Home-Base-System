@@ -1,0 +1,140 @@
+﻿@page "/inventory/book-in"
+@inject InventoryService Inventory
+@inject CatalogService Catalog
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["BookIn.Title"]</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Localizer["BookIn.Title"]</MudText>
+
+@if (_selected is null)
+{
+    <MudTextField T="string"
+                  Value="_term"
+                  ValueChanged="SearchAsync"
+                  Immediate="true"
+                  DebounceInterval="200"
+                  Clearable="true"
+                  Autofocus="true"
+                  Variant="Variant.Outlined"
+                  Placeholder="@Localizer["BookIn.SearchPlaceholder"]"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Class="mb-4"/>
+
+    @if (_matches is null)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+    }
+    else if (_matches.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            @Localizer["BookIn.NoMatch"]
+            <MudLink Href="/products/new">@Localizer["BookIn.CreateProduct"]</MudLink>
+        </MudAlert>
+    }
+    else
+    {
+        <MudPaper Outlined="true">
+            <MudList T="int">
+                @foreach (var row in _matches)
+                {
+                    <MudListItem T="int" Value="row.Id" OnClick="() => SelectAsync(row.Id)">
+                        <MudText Typo="Typo.body1"><b>@row.Name</b></MudText>
+                        <MudText Typo="Typo.caption">
+                            @if (!string.IsNullOrWhiteSpace(row.Brand))
+                            {
+                                <span>@row.Brand · </span>
+                            }
+                            <span>@Localizer["BookIn.PackageSize", Units.Format(row.PackageSize, row.BaseUnit)]</span>
+                            <span> · @Localizer["BookIn.CurrentStock", Units.Format(row.StockBase, row.BaseUnit)]</span>
+                        </MudText>
+                    </MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    }
+}
+else
+{
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <div class="d-flex justify-space-between align-center flex-wrap gap-3">
+            <div>
+                <MudText Typo="Typo.h6">@_selected.Name</MudText>
+                <MudText Typo="Typo.caption">
+                    @Localizer["BookIn.PackageSize", Units.Format(_selected.PackageSize, _selected.BaseUnit)]
+                </MudText>
+            </div>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       StartIcon="@Icons.Material.Filled.SwapHoriz"
+                       OnClick="@Reset">
+                @Localizer["BookIn.OtherProduct"]
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="pa-4">
+        <MudGrid Spacing="3">
+            <MudItem xs="6" sm="4">
+                <MudNumericField Value="_packages"
+                                 ValueChanged="OnPackagesChanged"
+                                 T="decimal"
+                                 Label="@Localizer["BookIn.Packages"]"
+                                 Variant="Variant.Outlined"
+                                 Min="0"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <MudNumericField @bind-Value="_quantityBase"
+                                 Label="@Localizer["BookIn.Quantity", Units.Abbreviation(_selected.BaseUnit)]"
+                                 Variant="Variant.Outlined"
+                                 Min="0"/>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_locationId"
+                           Label="@Localizer["BookIn.Location"]"
+                           Variant="Variant.Outlined"
+                           Clearable="true">
+                    <MudSelectItem T="int?" Value="@(null)">@Localizer["BookIn.NoLocation"]</MudSelectItem>
+                    @foreach (var location in _locations)
+                    {
+                        <MudSelectItem T="int?" Value="@(location.Id)">
+                            @CatalogService.LocationLabel(location)
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="BestBeforeDate"
+                               Label="@Localizer["BookIn.BestBefore"]"
+                               Variant="Variant.Outlined"
+                               Editable="true"
+                               Clearable="true"
+                               HelperText="@ShelfLifeHint"/>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4">@_error</MudAlert>
+    }
+
+    <div class="d-flex flex-wrap gap-3 mt-4">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   Disabled="_busy"
+                   OnClick="@SaveAsync">
+            @Localizer["BookIn.Title"]
+        </MudButton>
+        <MudButton Href="/inventory"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   Size="Size.Large">
+            @Localizer["Common.Cancel"]
+        </MudButton>
+    </div>
+}

@@ -1,7 +1,104 @@
-﻿@page "/"
+@page "/"
+@inject InventoryService Inventory
+@inject IStringLocalizer<AppStrings> Localizer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>@Localizer["Home.Title"]</PageTitle>
 
-<h1>Hello, world!</h1>
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Localizer["Home.Title"]</MudText>
 
-Welcome to your new app.
+@if (_expiring is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="6" md="4">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h4">@_total</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">@Localizer["Home.LotsInStock"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="4">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h4" Color="@(_expiring.Count > 0 ? Color.Warning : Color.Inherit)">
+                    @_expiring.Count
+                </MudText>
+                <MudText Typo="Typo.body2">@Localizer["Home.ExpiringSoon"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h4" Color="@(_expired > 0 ? Color.Error : Color.Inherit)">
+                    @_expired
+                </MudText>
+                <MudText Typo="Typo.body2">@Localizer["Home.AlreadyExpired"]</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @if (_expiring.Count > 0)
+    {
+        <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Home.UseNext"]</MudText>
+        <MudPaper Outlined="true" Class="mb-6">
+            <MudList T="string" Dense="false">
+                @foreach (var lot in _expiring.Take(10))
+                {
+                    <MudListItem T="string" Href="/inventory">
+                        <div class="d-flex justify-space-between align-center gap-2">
+                            <div>
+                                <MudText Typo="Typo.body1">@lot.ProductName</MudText>
+                                <MudText Typo="Typo.caption">
+                                    @(lot.LocationName ?? Localizer["Home.NoLocation"].Value)
+                                </MudText>
+                            </div>
+                            <MudText Typo="Typo.body1"
+                                     Color="@(lot.IsExpired ? Color.Error : Color.Inherit)">
+                                <b>@Units.Format(lot.QuantityBase, lot.BaseUnit)</b>
+                            </MudText>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        </MudPaper>
+    }
+
+    <div class="d-flex flex-wrap gap-3">
+        <MudButton Href="/inventory/book-in"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.AddShoppingCart">
+            @Localizer["BookIn.Title"]
+        </MudButton>
+        <MudButton Href="/inventory"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Inventory2">
+            @Localizer["Stock.Title"]
+        </MudButton>
+        <MudButton Href="/products"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.ListAlt">
+            @Localizer["Products.Title"]
+        </MudButton>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<StockLotView>? _expiring;
+    private int _total;
+    private int _expired;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await Inventory.GetStockAsync();
+
+        _total = all.Count;
+        _expired = all.Count(l => l.IsExpired);
+        _expiring = [.. all.Where(l => l.DaysLeft is <= 7)];
+    }
+}

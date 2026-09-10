@@ -1,0 +1,144 @@
+@page "/products/new"
+@page "/products/{Id:int}"
+@inject CatalogService Catalog
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@(IsNew ? Localizer["Products.New"].Value : _product?.Name ?? Localizer["ProductEdit.Fallback"].Value)</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@(IsNew ? Localizer["Products.New"] : Localizer["ProductEdit.Title"])</MudText>
+
+@if (_product is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <EditForm Model="_product" OnValidSubmit="SaveAsync" FormName="product">
+        <DataAnnotationsValidator/>
+
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudGrid Spacing="3">
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_product.Name"
+                                  Label="@Localizer["ProductEdit.Name"]"
+                                  Variant="Variant.Outlined"
+                                  Required="true"/>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_product.Brand"
+                                  Label="@Localizer["ProductEdit.Brand"]"
+                                  Variant="Variant.Outlined"/>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_product.Gtin"
+                                  Label="@Localizer["ProductEdit.Gtin"]"
+                                  Variant="Variant.Outlined"
+                                  InputMode="InputMode.numeric"/>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="_product.CategoryId"
+                               Label="@Localizer["ProductEdit.Category"]"
+                               Variant="Variant.Outlined"
+                               Clearable="true">
+                        <MudSelectItem T="int?" Value="@(null)">@Localizer["ProductEdit.NoCategory"]</MudSelectItem>
+                        @foreach (var category in _categories)
+                        {
+                            <MudSelectItem T="int?" Value="@(category.Id)">@category.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="_product.DefaultLocationId"
+                               Label="@Localizer["ProductEdit.DefaultLocation"]"
+                               Variant="Variant.Outlined"
+                               Clearable="true"
+                               HelperText="@Localizer["ProductEdit.DefaultLocationHint"]">
+                        <MudSelectItem T="int?" Value="@(null)">@Localizer["ProductEdit.NoDefaultLocation"]</MudSelectItem>
+                        @foreach (var location in _locations)
+                        {
+                            <MudSelectItem T="int?" Value="@(location.Id)">
+                                @CatalogService.LocationLabel(location)
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6" sm="4">
+                    <MudSelect @bind-Value="_product.BaseUnit"
+                               Label="@Localizer["ProductEdit.BaseUnit"]"
+                               Variant="Variant.Outlined">
+                        @foreach (var unit in Enum.GetValues<BaseUnit>())
+                        {
+                            <MudSelectItem T="BaseUnit" Value="unit">@Units.Describe(unit)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" sm="4">
+                    <MudNumericField @bind-Value="_product.PackageSize"
+                                     Label="@Localizer["ProductEdit.PackageSize", Units.Abbreviation(_product.BaseUnit)]"
+                                     Variant="Variant.Outlined"
+                                     Min="0"/>
+                </MudItem>
+                <MudItem xs="12" sm="4" Class="d-flex align-center">
+                    <MudSwitch @bind-Value="_product.IsFood"
+                               Color="Color.Primary"
+                               Label="@Localizer["ProductEdit.IsFood"]"/>
+                </MudItem>
+
+                <MudItem xs="6" sm="4">
+                    <MudNumericField @bind-Value="_product.MinStockBase"
+                                     Label="@Localizer["ProductEdit.MinStock"]"
+                                     Variant="Variant.Outlined"
+                                     Min="0"
+                                     Clearable="true"/>
+                </MudItem>
+                <MudItem xs="6" sm="4">
+                    <MudNumericField @bind-Value="_product.TargetStockBase"
+                                     Label="@Localizer["ProductEdit.TargetStock"]"
+                                     Variant="Variant.Outlined"
+                                     Min="0"
+                                     Clearable="true"/>
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudNumericField @bind-Value="_product.DefaultShelfLifeDays"
+                                     Label="@Localizer["ProductEdit.ShelfLife"]"
+                                     Variant="Variant.Outlined"
+                                     Min="0"
+                                     Clearable="true"
+                                     HelperText="@Localizer["ProductEdit.ShelfLifeHint"]"/>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_product.Notes"
+                                  Label="@Localizer["ProductEdit.Notes"]"
+                                  Variant="Variant.Outlined"
+                                  Lines="2"/>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4">@_error</MudAlert>
+        }
+
+        <div class="d-flex flex-wrap gap-3 mt-4">
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Disabled="_saving">
+                @Localizer["Common.Save"]
+            </MudButton>
+            <MudButton Href="/products"
+                       Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Large">
+                @Localizer["Common.Cancel"]
+            </MudButton>
+        </div>
+    </EditForm>
+}

@@ -1,0 +1,152 @@
+@page "/inventory"
+@inject InventoryService Inventory
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Stock.Title"]</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">@Localizer["Stock.Title"]</MudText>
+    <MudButton Href="/inventory/book-in"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.AddShoppingCart">
+        @Localizer["BookIn.Title"]
+    </MudButton>
+</div>
+
+<MudChipSet T="int?"
+            SelectionMode="SelectionMode.SingleSelection"
+            SelectedValue="_withinDays"
+            SelectedValueChanged="SetFilterAsync"
+            CheckMark="true"
+            Class="mb-4">
+    <MudChip T="int?" Value="@(null)" Color="Color.Primary" Variant="Variant.Outlined">
+        @Localizer["Stock.FilterAll"]
+    </MudChip>
+    <MudChip T="int?" Value="@(3)" Color="Color.Primary" Variant="Variant.Outlined">
+        @Localizer["Stock.FilterExpiring", 3]
+    </MudChip>
+    <MudChip T="int?" Value="@(14)" Color="Color.Primary" Variant="Variant.Outlined">
+        @Localizer["Stock.FilterExpiring", 14]
+    </MudChip>
+</MudChipSet>
+
+@if (_lots is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else if (_lots.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+        @(_withinDays is null ? Localizer["Stock.Empty"] : Localizer["Stock.EmptyForFilter"])
+    </MudAlert>
+}
+else
+{
+    @foreach (var group in _lots.GroupBy(l => l.LocationName ?? Localizer["Stock.NoLocation"].Value))
+    {
+        <MudText Typo="Typo.h6" Class="mt-6 mb-2 d-flex align-center gap-2">
+            <MudIcon Icon="@Zones.Icon(group.First().LocationZone)" Size="Size.Medium"/>
+            @group.Key
+        </MudText>
+
+        <MudPaper Outlined="true">
+            @foreach (var lot in group)
+            {
+                <div class="pa-4">
+                    <div class="d-flex justify-space-between align-start flex-wrap gap-2">
+                        <div>
+                            <MudText Typo="Typo.body1">
+                                <b>@lot.ProductName</b>
+                                @if (lot.IsOpened)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Class="ml-2">
+                                        @Localizer["Stock.OpenedBadge"]
+                                    </MudChip>
+                                }
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="@BestBeforeColor(lot)">
+                                @if (!string.IsNullOrWhiteSpace(lot.Brand))
+                                {
+                                    <span>@lot.Brand · </span>
+                                }
+                                <span>@BestBeforeText(lot)</span>
+                                @if (lot.Value is { } value)
+                                {
+                                    <span> · @Units.Money(value)</span>
+                                }
+                            </MudText>
+                        </div>
+                        <MudText Typo="Typo.h6">@Units.Format(lot.QuantityBase, lot.BaseUnit)</MudText>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   OnClick="() => Begin(lot, StockMovementType.Consume)">
+                            @Localizer["Stock.Consume"]
+                        </MudButton>
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   OnClick="() => Begin(lot, StockMovementType.Waste)">
+                            @Localizer["Stock.Waste"]
+                        </MudButton>
+                        @if (!lot.IsOpened)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       OnClick="() => OpenAsync(lot)">
+                                @Localizer["Stock.MarkOpened"]
+                            </MudButton>
+                        }
+                    </div>
+
+                    @if (_active?.LotId == lot.LotId)
+                    {
+                        <MudDivider Class="my-3"/>
+
+                        <div class="d-flex flex-wrap align-center gap-2">
+                            <MudNumericField @bind-Value="_amount"
+                                             Label="@Localizer["Stock.AmountLabel", Units.Abbreviation(lot.BaseUnit), MovementLabel]"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Min="0"
+                                             Style="max-width: 14rem"/>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Disabled="_busy"
+                                       OnClick="@ApplyAsync">
+                                @Localizer["Stock.Book"]
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       Disabled="_busy"
+                                       OnClick="@ApplyAllAsync">
+                                @Localizer["Stock.BookAll", Units.Format(lot.QuantityBase, lot.BaseUnit)]
+                            </MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@Cancel">
+                                @Localizer["Common.Cancel"]
+                            </MudButton>
+                        </div>
+
+                        @if (_message is not null)
+                        {
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-3">
+                                @_message
+                            </MudAlert>
+                        }
+                    }
+                </div>
+
+                @if (!ReferenceEquals(lot, group.Last()))
+                {
+                    <MudDivider/>
+                }
+            }
+        </MudPaper>
+    }
+}
