@@ -35,39 +35,30 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        var products = await db
+        var minimums = await db
             .Products.WithMinimumStock()
-            .Select(p => new
-            {
-                p.Id,
-                p.Name,
-                p.BaseUnit,
-                Minimum = p.MinStockBase!.Value,
-            })
+            .Select(p => new MinimumStock(p.Id, p.Name, p.BaseUnit, p.MinStockBase!.Value))
             .ToListAsync(ct);
 
         var totals = await db.StockLots.StockTotalsByProductAsync(ct);
 
-        return
-        [
-            .. products
-                .Select(p => new LowStockRow(
-                    p.Id,
-                    p.Name,
-                    p.BaseUnit,
-                    totals.GetValueOrDefault(p.Id),
-                    p.Minimum
-                ))
-                .Where(r => r.StockBase < r.MinStockBase)
-                .OrderBy(r => r.Name),
-        ];
+        return LowStockRule.Below(minimums, totals);
     }
 
     public async Task<long> BookInAsync(BookInRequest request, CancellationToken ct = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.QuantityBase);
-
         await using var db = await factory.CreateDbContextAsync(ct);
+
+        var lot = AddLot(db, request);
+
+        await db.SaveChangesAsync(ct);
+
+        return lot.Id;
+    }
+
+    internal static StockLot AddLot(HomeBaseDbContext db, BookInRequest request)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.QuantityBase);
 
         var lot = new StockLot
         {
@@ -90,9 +81,7 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
             }
         );
 
-        await db.SaveChangesAsync(ct);
-
-        return lot.Id;
+        return lot;
     }
 
     public async Task<StockChangeResult> TakeFromLotAsync(
@@ -134,45 +123,63 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
         CancellationToken ct = default
     )
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantityBase);
-
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
+
+        var result = await TakeFromProductAsync(
+            db,
+            productId,
+            quantityBase,
+            type,
+            reason,
+            note,
+            mealPlanEntryId,
+            ct
+        );
+
+        await transaction.CommitAsync(ct);
+
+        return result;
+    }
+
+    internal static async Task<StockChangeResult> TakeFromProductAsync(
+        HomeBaseDbContext db,
+        int productId,
+        decimal quantityBase,
+        StockMovementType type,
+        string? reason,
+        string? note,
+        long? mealPlanEntryId,
+        CancellationToken ct
+    )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantityBase);
 
         var lots = await db
             .StockLots.InStock()
             .ForProduct(productId)
             .FirstExpiredFirstOut()
-            .Select(l => new { l.Id, l.QuantityBase })
+            .Select(l => new LotQuantity(l.Id, l.QuantityBase))
             .ToListAsync(ct);
 
-        var remaining = quantityBase;
+        var allocation = FefoAllocator.Allocate(lots, quantityBase);
 
-        foreach (var lot in lots)
+        foreach (var take in allocation.Takes)
         {
-            if (remaining <= 0)
-            {
-                break;
-            }
-
-            var taken = Math.Min(remaining, lot.QuantityBase);
             await DeductAsync(
                 db,
-                lot.Id,
+                take.LotId,
                 productId,
-                taken,
+                take.QuantityBase,
                 type,
                 reason,
                 note,
                 ct,
                 mealPlanEntryId
             );
-            remaining -= taken;
         }
 
-        await transaction.CommitAsync(ct);
-
-        return new StockChangeResult(quantityBase - remaining, remaining);
+        return allocation.ToResult();
     }
 
     public async Task CorrectLotAsync(

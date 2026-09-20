@@ -19,7 +19,27 @@ public sealed record LowStockRow(
     decimal MinStockBase
 );
 
+public sealed record MinimumStock(
+    int ProductId,
+    string Name,
+    BaseUnit BaseUnit,
+    decimal MinStockBase
+);
+
 public sealed record StockChangeResult(decimal Applied, decimal Shortfall)
 {
     public bool IsComplete => Shortfall == 0;
+}
+
+public readonly record struct LotQuantity(long LotId, decimal QuantityBase);
+
+public readonly record struct LotTake(long LotId, decimal QuantityBase);
+
+public sealed record FefoAllocation(
+    IReadOnlyList<LotTake> Takes,
+    decimal Applied,
+    decimal Shortfall
+)
+{
+    public StockChangeResult ToResult() => new(Applied, Shortfall);
 }

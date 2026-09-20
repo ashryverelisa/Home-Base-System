@@ -50,7 +50,7 @@ else
                     @foreach (var location in _locations)
                     {
                         <MudSelectItem T="int?" Value="@(location.Id)">
-                            @CatalogService.LocationLabel(location)
+                            @LocationTree.Label(location)
                         </MudSelectItem>
                     }
                 </MudSelect>

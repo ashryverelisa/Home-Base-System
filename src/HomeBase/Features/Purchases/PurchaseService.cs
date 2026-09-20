@@ -12,7 +12,6 @@ namespace HomeBase.Features.Purchases;
 
 public sealed class PurchaseService(
     IDbContextFactory<HomeBaseDbContext> factory,
-    InventoryService inventory,
     IStringLocalizer<AppStrings> localizer
 )
 {
@@ -105,6 +104,7 @@ public sealed class PurchaseService(
         }
 
         await using var db = await factory.CreateDbContextAsync(ct);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
 
         var purchase = new Purchase
         {
@@ -137,12 +137,15 @@ public sealed class PurchaseService(
             await BookPurchaseAsync(db, purchase.Id, bestBefore, ct);
         }
 
+        await transaction.CommitAsync(ct);
+
         return PurchaseSaveResult.Ok(purchase.Id);
     }
 
     public async Task<bool> ConfirmAsync(long purchaseId, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
 
         var purchase = await db.Purchases.FindAsync([purchaseId], ct);
 
@@ -155,6 +158,8 @@ public sealed class PurchaseService(
         await db.SaveChangesAsync(ct);
 
         await BookPurchaseAsync(db, purchaseId, bestBefore: null, ct);
+
+        await transaction.CommitAsync(ct);
 
         return true;
     }
@@ -245,7 +250,7 @@ public sealed class PurchaseService(
         }
     }
 
-    private async Task BookPurchaseAsync(
+    private static async Task BookPurchaseAsync(
         HomeBaseDbContext db,
         long purchaseId,
         IReadOnlyDictionary<long, DateOnly?>? bestBefore,
@@ -256,37 +261,44 @@ public sealed class PurchaseService(
             .PurchaseItems.ForPurchase(purchaseId)
             .ItemLines()
             .Where(i => i.ProductId != null && i.QuantityBase > 0)
-            .Select(i => new
-            {
+            .Select(i => new BookableLine(
                 i.Id,
-                ProductId = i.ProductId!.Value,
-                QuantityBase = i.QuantityBase!.Value,
+                i.ProductId!.Value,
+                i.QuantityBase!.Value,
                 i.Product!.DefaultLocationId,
-                i.Product!.DefaultShelfLifeDays,
-            })
+                i.Product!.DefaultShelfLifeDays
+            ))
             .ToListAsync(ct);
+
+        if (lines.Count == 0)
+        {
+            return;
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
 
         foreach (var line in lines)
         {
-            var expiry =
-                bestBefore?.GetValueOrDefault(line.Id)
-                ?? (
-                    line.DefaultShelfLifeDays is { } days
-                        ? DateOnly.FromDateTime(DateTime.Today).AddDays(days)
-                        : null
-                );
-
-            await inventory.BookInAsync(
+            InventoryService.AddLot(
+                db,
                 new BookInRequest(
                     line.ProductId,
                     line.QuantityBase,
                     line.DefaultLocationId,
-                    expiry,
+                    ShelfLife.Resolve(
+                        bestBefore?.GetValueOrDefault(line.Id),
+                        line.DefaultShelfLifeDays,
+                        today
+                    ),
                     line.Id
-                ),
-                ct
+                )
             );
+        }
 
+        await db.SaveChangesAsync(ct);
+
+        foreach (var line in lines)
+        {
             await SettleShoppingItemsAsync(db, line.ProductId, line.Id, ct);
         }
     }
@@ -307,4 +319,12 @@ public sealed class PurchaseService(
                         .SetProperty(i => i.PurchaseItemId, purchaseItemId),
                 ct
             );
+
+    private sealed record BookableLine(
+        long Id,
+        int ProductId,
+        decimal QuantityBase,
+        int? DefaultLocationId,
+        int? DefaultShelfLifeDays
+    );
 }

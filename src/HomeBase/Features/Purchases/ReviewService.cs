@@ -9,8 +9,6 @@ namespace HomeBase.Features.Purchases;
 
 public sealed class ReviewService(IDbContextFactory<HomeBaseDbContext> factory)
 {
-    public const decimal PromoHintFactor = 0.85m;
-
     public async Task<IReadOnlyList<ReviewLineRow>> GetLinesAsync(
         long purchaseId,
         CancellationToken ct = default
@@ -26,17 +24,7 @@ public sealed class ReviewService(IDbContextFactory<HomeBaseDbContext> factory)
 
         var medians = await MediansAsync(db, purchaseId, rows, ct);
 
-        return
-        [
-            .. rows.Select(row =>
-                row.ProductId is { } productId
-                && row.PricePerBaseUnit is { } price
-                && medians.TryGetValue(productId, out var median)
-                && price < median * PromoHintFactor
-                    ? row with { PromoHint = true }
-                    : row
-            ),
-        ];
+        return PromoDetection.Apply(rows, medians);
     }
 
     public async Task<bool> AssignAsync(
@@ -160,22 +148,9 @@ public sealed class ReviewService(IDbContextFactory<HomeBaseDbContext> factory)
                 && !i.IsPromo
                 && i.PricePerBaseUnit != null
             )
-            .Select(i => new { ProductId = i.ProductId!.Value, Price = i.PricePerBaseUnit!.Value })
+            .Select(i => new ProductPrice(i.ProductId!.Value, i.PricePerBaseUnit!.Value))
             .ToListAsync(ct);
 
-        return history
-            .GroupBy(h => h.ProductId)
-            .ToDictionary(g => g.Key, g => Median([.. g.Select(h => h.Price)]));
-    }
-
-    private static decimal Median(List<decimal> values)
-    {
-        values.Sort();
-
-        var middle = values.Count / 2;
-
-        return values.Count % 2 == 1
-            ? values[middle]
-            : (values[middle - 1] + values[middle]) / 2m;
+        return PromoDetection.MediansByProduct(history);
     }
 }

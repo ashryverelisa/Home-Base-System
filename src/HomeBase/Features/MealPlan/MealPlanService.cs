@@ -7,10 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.MealPlan;
 
-public sealed class MealPlanService(
-    IDbContextFactory<HomeBaseDbContext> factory,
-    InventoryService inventory
-)
+public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory)
 {
     public async Task<IReadOnlyList<MealPlanRow>> GetRangeAsync(
         DateOnly from,
@@ -71,6 +68,15 @@ public sealed class MealPlanService(
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
+        await SetStatusAsync(db, entryId, status, ct);
+    }
+
+    private static async Task SetStatusAsync(
+        HomeBaseDbContext db,
+        long entryId,
+        MealPlanStatus status,
+        CancellationToken ct
+    ) =>
         await db
             .MealPlanEntries.Where(e => e.Id == entryId)
             .ExecuteUpdateAsync(
@@ -82,7 +88,6 @@ public sealed class MealPlanService(
                         ),
                 ct
             );
-    }
 
     public async Task<CookPlan?> GetCookPlanAsync(long entryId, CancellationToken ct = default)
     {
@@ -103,56 +108,22 @@ public sealed class MealPlanService(
             return new CookPlan(entry.Id, entry.FreeText ?? string.Empty, entry.Servings, [], []);
         }
 
-        var factorNumerator = entry.Servings;
-        var factorDenominator = recipe.Servings > 0 ? recipe.Servings : 1;
-
         var ingredients = await db
             .RecipeIngredients.ForRecipe(recipeId)
             .InRecipeOrder()
-            .Select(i => new
-            {
-                i.ProductId,
-                ProductName = i.Product!.Name,
-                i.Product!.BaseUnit,
-                i.QuantityBase,
-                i.FreeText,
-                i.IsOptional,
-            })
+            .Select(IngredientLine.Projection)
             .ToListAsync(ct);
 
         var totals = await db.StockLots.StockTotalsByProductAsync(ct);
 
-        List<CookLine> lines = [];
-        List<string> untracked = [];
-
-        foreach (var ingredient in ingredients)
-        {
-            if (
-                ingredient.ProductId is not { } productId
-                || ingredient.QuantityBase is not { } quantity
-                || quantity <= 0
-            )
-            {
-                untracked.Add(ingredient.ProductName ?? ingredient.FreeText ?? string.Empty);
-
-                continue;
-            }
-
-            var needed = Scale(quantity, factorNumerator, factorDenominator);
-
-            lines.Add(
-                new CookLine(
-                    productId,
-                    ingredient.ProductName!,
-                    ingredient.BaseUnit,
-                    needed,
-                    totals.GetValueOrDefault(productId),
-                    ingredient.IsOptional
-                )
-            );
-        }
-
-        return new CookPlan(entry.Id, recipe.Name, entry.Servings, lines, untracked);
+        return CookPlanBuilder.Build(
+            entry.Id,
+            recipe.Name,
+            entry.Servings,
+            recipe.Servings,
+            ingredients,
+            totals
+        );
     }
 
     public async Task<CookResult> CookAsync(
@@ -161,11 +132,15 @@ public sealed class MealPlanService(
         CancellationToken ct = default
     )
     {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+
         List<CookLine> shortfalls = [];
 
         foreach (var line in lines.Where(l => l.Needed > 0))
         {
-            var result = await inventory.TakeFromProductAsync(
+            var result = await InventoryService.TakeFromProductAsync(
+                db,
                 line.ProductId,
                 line.Needed,
                 StockMovementType.Consume,
@@ -181,7 +156,9 @@ public sealed class MealPlanService(
             }
         }
 
-        await SetStatusAsync(entryId, MealPlanStatus.Cooked, ct);
+        await SetStatusAsync(db, entryId, MealPlanStatus.Cooked, ct);
+
+        await transaction.CommitAsync(ct);
 
         return new CookResult(shortfalls.Count == 0, shortfalls);
     }
@@ -203,95 +180,38 @@ public sealed class MealPlanService(
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        var entries = await db
+        return await GetNeedsAsync(db, from, to, ct);
+    }
+
+    private static async Task<IReadOnlyList<NeedRow>> GetNeedsAsync(
+        HomeBaseDbContext db,
+        DateOnly from,
+        DateOnly to,
+        CancellationToken ct
+    )
+    {
+        var meals = await db
             .MealPlanEntries.Between(from, to)
             .Planned()
             .Where(e => e.RecipeId != null)
-            .Select(e => new
-            {
-                e.RecipeId,
-                e.Servings,
-                RecipeServings = e.Recipe!.Servings,
-            })
+            .Select(e => new PlannedMeal(e.RecipeId!.Value, e.Servings, e.Recipe!.Servings))
             .ToListAsync(ct);
 
-        if (entries.Count == 0)
+        if (meals.Count == 0)
         {
             return [];
         }
 
-        var recipeIds = entries.Select(e => e.RecipeId!.Value).Distinct().ToList();
+        var recipeIds = meals.Select(m => m.RecipeId).Distinct().ToList();
 
         var ingredients = await db
             .RecipeIngredients.Where(i => recipeIds.Contains(i.RecipeId))
-            .Select(i => new
-            {
-                i.RecipeId,
-                i.ProductId,
-                ProductName = i.Product!.Name,
-                i.Product!.BaseUnit,
-                i.QuantityBase,
-                i.FreeText,
-                i.IsOptional,
-            })
+            .Select(IngredientLine.Projection)
             .ToListAsync(ct);
-
-        Dictionary<int, Accumulated> tracked = [];
-        Dictionary<string, decimal> free = [];
-
-        foreach (var entry in entries)
-        {
-            var denominator = entry.RecipeServings > 0 ? entry.RecipeServings : 1;
-
-            foreach (var ingredient in ingredients.Where(i => i.RecipeId == entry.RecipeId))
-            {
-                if (ingredient.IsOptional)
-                {
-                    continue;
-                }
-
-                if (
-                    ingredient.ProductId is not { } productId
-                    || ingredient.QuantityBase is not { } quantity
-                    || quantity <= 0
-                )
-                {
-                    var label = ingredient.ProductName ?? ingredient.FreeText;
-
-                    if (!string.IsNullOrWhiteSpace(label))
-                    {
-                        free[label] = free.GetValueOrDefault(label) + 1;
-                    }
-
-                    continue;
-                }
-
-                var needed = Scale(quantity, entry.Servings, denominator);
-                var current = tracked.GetValueOrDefault(
-                    productId,
-                    new Accumulated(ingredient.ProductName!, ingredient.BaseUnit, 0m)
-                );
-
-                tracked[productId] = current with { Needed = current.Needed + needed };
-            }
-        }
 
         var totals = await db.StockLots.StockTotalsByProductAsync(ct);
 
-        return
-        [
-            .. tracked
-                .Select(t => new NeedRow(
-                    t.Key,
-                    t.Value.Name,
-                    t.Value.Unit,
-                    t.Value.Needed,
-                    totals.GetValueOrDefault(t.Key)
-                ))
-                .OrderByDescending(n => n.Missing)
-                .ThenBy(n => n.Label),
-            .. free.Select(f => new NeedRow(null, f.Key, null, 0m, 0m)).OrderBy(n => n.Label),
-        ];
+        return MealNeedsBuilder.Build(meals, ingredients, totals);
     }
 
     public async Task<int> ApplyToShoppingListAsync(
@@ -300,9 +220,10 @@ public sealed class MealPlanService(
         CancellationToken ct = default
     )
     {
-        var needs = await GetNeedsAsync(from, to, ct);
-
         await using var db = await factory.CreateDbContextAsync(ct);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+
+        var needs = await GetNeedsAsync(db, from, to, ct);
 
         var list =
             await db.ShoppingLists.Active().FirstOrDefaultAsync(l => l.IsDefault, ct)
@@ -360,11 +281,8 @@ public sealed class MealPlanService(
             await db.SaveChangesAsync(ct);
         }
 
+        await transaction.CommitAsync(ct);
+
         return added;
     }
-
-    private static decimal Scale(decimal quantity, int servings, int recipeServings) =>
-        quantity * servings / recipeServings;
-
-    private sealed record Accumulated(string Name, BaseUnit Unit, decimal Needed);
 }

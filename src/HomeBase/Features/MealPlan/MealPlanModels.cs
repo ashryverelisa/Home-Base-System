@@ -36,6 +36,34 @@ public sealed record MealPlanRow(
     public bool IsPlanned => Status == MealPlanStatus.Planned;
 }
 
+public sealed record PlannedMeal(int RecipeId, int Servings, int RecipeServings);
+
+public sealed record IngredientLine(
+    int RecipeId,
+    int? ProductId,
+    string? ProductName,
+    BaseUnit? BaseUnit,
+    decimal? QuantityBase,
+    string? FreeText,
+    bool IsOptional
+)
+{
+    public static readonly Expression<Func<RecipeIngredient, IngredientLine>> Projection =
+        ingredient => new IngredientLine(
+            ingredient.RecipeId,
+            ingredient.ProductId,
+            ingredient.Product!.Name,
+            (BaseUnit?)ingredient.Product!.BaseUnit,
+            ingredient.QuantityBase,
+            ingredient.FreeText,
+            ingredient.IsOptional
+        );
+
+    public bool IsTracked => ProductId is not null && QuantityBase > 0m;
+
+    public string Label => ProductName ?? FreeText ?? string.Empty;
+}
+
 public sealed record CookLine(
     int ProductId,
     string Name,
