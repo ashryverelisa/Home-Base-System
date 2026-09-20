@@ -1,0 +1,263 @@
+@page "/assets/new"
+@page "/assets/{Id:int}"
+@inject AssetService Equipment
+@inject CatalogService Catalog
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Title</PageTitle>
+
+@if (_asset is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Title</MudText>
+
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_asset.Name"
+                              Label="@Localizer["Assets.Name"]"
+                              Variant="Variant.Outlined"
+                              Required="true"/>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_asset.SerialNumber"
+                              Label="@Localizer["Assets.SerialNumber"]"
+                              Variant="Variant.Outlined"/>
+            </MudItem>
+
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_asset.CategoryId"
+                           Label="@Localizer["ProductEdit.Category"]"
+                           Variant="Variant.Outlined"
+                           Clearable="true">
+                    <MudSelectItem T="int?" Value="@(null)">@Localizer["ProductEdit.NoCategory"]</MudSelectItem>
+                    @foreach (var category in _categories)
+                    {
+                        <MudSelectItem T="int?" Value="@(category.Id)">@category.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_asset.LocationId"
+                           Label="@Localizer["BookIn.Location"]"
+                           Variant="Variant.Outlined"
+                           Clearable="true">
+                    <MudSelectItem T="int?" Value="@(null)">@Localizer["BookIn.NoLocation"]</MudSelectItem>
+                    @foreach (var location in _locations)
+                    {
+                        <MudSelectItem T="int?" Value="@(location.Id)">
+                            @CatalogService.LocationLabel(location)
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_asset.Status"
+                           Label="@Localizer["Assets.Status"]"
+                           Variant="Variant.Outlined">
+                    @foreach (var status in Statuses)
+                    {
+                        <MudSelectItem T="AssetStatus" Value="@status">
+                            @Localizer[$"AssetStatus.{status}"]
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="PurchasedDate"
+                               Label="@Localizer["Assets.PurchasedAt"]"
+                               Variant="Variant.Outlined"
+                               Editable="true"
+                               Clearable="true"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <MudNumericField @bind-Value="_asset.PurchasePrice"
+                                 T="decimal?"
+                                 Label="@Localizer["Assets.PurchasePrice"]"
+                                 Variant="Variant.Outlined"
+                                 Format="N2"/>
+            </MudItem>
+            <MudItem xs="6" sm="4">
+                <MudNumericField @bind-Value="_asset.CurrentValue"
+                                 T="decimal?"
+                                 Label="@Localizer["Assets.CurrentValue"]"
+                                 Variant="Variant.Outlined"
+                                 Format="N2"/>
+            </MudItem>
+
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="WarrantyDate"
+                               Label="@Localizer["Assets.WarrantyUntil"]"
+                               Variant="Variant.Outlined"
+                               Editable="true"
+                               Clearable="true"/>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudDatePicker @bind-Date="ServiceDate"
+                               Label="@Localizer["Assets.NextService"]"
+                               Variant="Variant.Outlined"
+                               Editable="true"
+                               Clearable="true"/>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudNumericField @bind-Value="_asset.ServiceIntervalDays"
+                                 T="int?"
+                                 Label="@Localizer["Assets.ServiceInterval"]"
+                                 HelperText="@Localizer["Assets.ServiceIntervalHint"]"
+                                 Variant="Variant.Outlined"
+                                 Min="0"/>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_asset.Notes"
+                              Label="@Localizer["Assets.Notes"]"
+                              Variant="Variant.Outlined"
+                              Lines="3"/>
+            </MudItem>
+        </MudGrid>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4">@_error</MudAlert>
+        }
+
+        <div class="d-flex flex-wrap gap-3 mt-4">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Disabled="_busy"
+                       OnClick="@SaveAsync">
+                @Localizer["Common.Save"]
+            </MudButton>
+            @if (Id > 0 && _asset.NextServiceAt is not null)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           Disabled="_busy"
+                           StartIcon="@Icons.Material.Filled.Build"
+                           OnClick="@CompleteServiceAsync">
+                    @Localizer["Assets.ServiceDone"]
+                </MudButton>
+            }
+            <MudButton Href="/assets"
+                       Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Large">
+                @Localizer["Common.Cancel"]
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">@Localizer["Assets.Attributes"]</MudText>
+
+        @if (_asset.Attributes.Count > 0)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @foreach (var field in _asset.Attributes)
+                {
+                    <MudChip T="string"
+                             Color="Color.Default"
+                             Variant="Variant.Outlined"
+                             OnClose="@(() => RemoveAttribute(field.Key))">
+                        @field.Key: @field.Value
+                    </MudChip>
+                }
+            </div>
+        }
+
+        <div class="d-flex flex-wrap align-center gap-3">
+            <MudTextField @bind-Value="_attributeKey"
+                          Label="@Localizer["Assets.AttributeKey"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Style="max-width: 14rem"/>
+            <MudTextField @bind-Value="_attributeValue"
+                          Label="@Localizer["Assets.AttributeValue"]"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Style="max-width: 14rem"/>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@AddAttribute">
+                @Localizer["Assets.AddAttribute"]
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    @if (Id > 0)
+    {
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">@Localizer["Assets.Documents"]</MudText>
+
+            @if (_documents.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mb-3">@Localizer["Assets.NoDocuments"]</MudText>
+            }
+            else
+            {
+                <MudList T="string" Class="mb-3">
+                    @foreach (var document in _documents)
+                    {
+                        <MudListItem T="string">
+                            <div class="d-flex justify-space-between align-center gap-3">
+                                <div>
+                                    <MudLink Href="@($"/documents/{document.Id}")" Target="_blank">
+                                        @document.FileName
+                                    </MudLink>
+                                    <MudText Typo="Typo.caption">
+                                        @Localizer[$"AssetDocumentType.{document.Type}"]
+                                        · @document.UploadedAt.LocalDateTime.ToString("d")
+                                    </MudText>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Color="Color.Default"
+                                               title="@Localizer["Assets.DeleteDocument"]"
+                                               OnClick="@(() => DeleteDocumentAsync(document))"/>
+                            </div>
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
+            <div class="d-flex flex-wrap align-center gap-3">
+                <MudSelect @bind-Value="_documentType"
+                           Label="@Localizer["Assets.DocumentType"]"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Style="max-width: 14rem">
+                    @foreach (var type in DocumentTypes)
+                    {
+                        <MudSelectItem T="AssetDocumentType" Value="@type">
+                            @Localizer[$"AssetDocumentType.{type}"]
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudFileUpload T="IBrowserFile"
+                               FilesChanged="UploadAsync"
+                               MaximumFileCount="1"
+                               Accept=".pdf,.png,.jpg,.jpeg,.webp,.txt">
+                    <CustomContent Context="upload">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   Disabled="_busy"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload"
+                                   OnClick="@(() => upload.OpenFilePickerAsync())">
+                            @Localizer["Assets.Upload"]
+                        </MudButton>
+                    </CustomContent>
+                </MudFileUpload>
+            </div>
+
+            @if (_uploadError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mt-3">@_uploadError</MudAlert>
+            }
+        </MudPaper>
+    }
+}

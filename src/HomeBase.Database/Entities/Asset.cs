@@ -21,6 +21,8 @@ public class Asset
     public DateOnly? WarrantyUntil { get; set; }
     public decimal? CurrentValue { get; set; }
     public DateOnly? DisposedAt { get; set; }
+    public DateOnly? NextServiceAt { get; set; }
+    public int? ServiceIntervalDays { get; set; }
     public Dictionary<string, string> Attributes { get; set; } = [];
     public string? Notes { get; set; }
     public List<AssetDocument> Documents { get; set; } = [];

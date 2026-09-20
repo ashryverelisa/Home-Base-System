@@ -1,0 +1,194 @@
+@page "/shopping"
+@inject ShoppingService Shopping
+@inject CatalogService Catalog
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Shopping.Title"]</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Localizer["Shopping.Title"]</MudText>
+
+@if (_lists.Count == 0)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudChipSet T="int"
+                SelectionMode="SelectionMode.SingleSelection"
+                SelectedValue="_listId"
+                SelectedValueChanged="SelectListAsync"
+                CheckMark="true"
+                Class="mb-4">
+        @foreach (var list in _lists)
+        {
+            <MudChip T="int" Value="@list.Id" Color="Color.Primary" Variant="Variant.Outlined">
+                @list.Name@(list.OpenCount > 0 ? $" ({list.OpenCount})" : string.Empty)
+            </MudChip>
+        }
+    </MudChipSet>
+
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudGrid Spacing="3" Class="align-center">
+            <MudItem xs="12" sm="@(_picked is null ? 9 : 6)">
+                <MudAutocomplete T="ProductRow"
+                                 Value="_picked"
+                                 ValueChanged="Pick"
+                                 Text="@_term"
+                                 TextChanged="@(text => _term = text)"
+                                 SearchFunc="SearchAsync"
+                                 ToStringFunc="@(row => row?.Name ?? string.Empty)"
+                                 CoerceText="false"
+                                 Clearable="true"
+                                 ResetValueOnEmptyText="true"
+                                 Variant="Variant.Outlined"
+                                 Label="@Localizer["Shopping.AddLabel"]"
+                                 HelperText="@Localizer["Shopping.AddHint"]"
+                                 Adornment="Adornment.Start"
+                                 AdornmentIcon="@Icons.Material.Filled.Add">
+                    <ItemTemplate Context="row">
+                        <MudText Typo="Typo.body1"><b>@row.Name</b></MudText>
+                        <MudText Typo="Typo.caption">
+                            @if (!string.IsNullOrWhiteSpace(row.Brand))
+                            {
+                                <span>@row.Brand · </span>
+                            }
+                            <span>@Localizer["BookIn.CurrentStock", Units.Format(row.StockBase, row.BaseUnit)]</span>
+                        </MudText>
+                    </ItemTemplate>
+                </MudAutocomplete>
+            </MudItem>
+
+            @if (_picked is not null)
+            {
+                <MudItem xs="6" sm="3">
+                    <MudNumericField @bind-Value="_quantity"
+                                     Label="@Localizer["Shopping.Quantity", Units.Abbreviation(_picked.BaseUnit)]"
+                                     Variant="Variant.Outlined"
+                                     Min="0"/>
+                </MudItem>
+            }
+
+            <MudItem xs="@(_picked is null ? 12 : 6)" sm="3">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           FullWidth="true"
+                           Disabled="_busy"
+                           OnClick="@AddAsync">
+                    @Localizer["Shopping.Add"]
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mt-3">@_error</MudAlert>
+        }
+    </MudPaper>
+
+    @if (_items is null)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+    }
+    else if (_items.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["Shopping.Empty"]</MudAlert>
+    }
+    else
+    {
+        <MudPaper Outlined="true">
+            @foreach (var item in _items)
+            {
+                <div class="d-flex align-center gap-2 pa-2">
+                    <MudCheckBox T="bool"
+                                 Value="false"
+                                 ValueChanged="@(_ => BuyAsync(item))"
+                                 Color="Color.Primary"
+                                 Size="Size.Large"/>
+                    <div class="flex-grow-1">
+                        <MudText Typo="Typo.body1">
+                            <b>@item.Label</b>
+                            @if (item.IsAutomatic)
+                            {
+                                <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Warning" Variant="Variant.Text">
+                                    @Localizer["Shopping.AutoBadge"]
+                                </MudChip>
+                            }
+                        </MudText>
+                        <MudText Typo="Typo.caption">@Describe(item)</MudText>
+                    </div>
+                    <MudIconButton Icon="@(item.IsImportant ? Icons.Material.Filled.Star : Icons.Material.Outlined.StarBorder)"
+                                   Color="@(item.IsImportant ? Color.Warning : Color.Default)"
+                                   title="@Localizer["Shopping.Important"]"
+                                   OnClick="@(() => ToggleImportantAsync(item))"/>
+                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                   Color="Color.Default"
+                                   title="@Localizer["Shopping.Remove"]"
+                                   OnClick="@(() => RemoveAsync(item))"/>
+                </div>
+
+                @if (!ReferenceEquals(item, _items[^1]))
+                {
+                    <MudDivider/>
+                }
+            }
+        </MudPaper>
+    }
+
+    <div class="d-flex flex-wrap align-center gap-3 mt-4">
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@(_showSettled ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                   OnClick="@ToggleSettledAsync">
+            @Localizer[_showSettled ? "Shopping.HideDone" : "Shopping.ShowDone"]
+        </MudButton>
+
+        @if (_showSettled && _settled is { Count: > 0 })
+        {
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       StartIcon="@Icons.Material.Filled.ClearAll"
+                       OnClick="@ClearSettledAsync">
+                @Localizer["Shopping.ClearDone"]
+            </MudButton>
+        }
+    </div>
+
+    @if (_showSettled)
+    {
+        @if (_settled is null)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+        }
+        else if (_settled.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">@Localizer["Shopping.NoneDone"]</MudText>
+        }
+        else
+        {
+            <MudPaper Outlined="true" Class="mt-2">
+                @foreach (var item in _settled)
+                {
+                    <div class="d-flex align-center gap-2 pa-2">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success"/>
+                        <div class="flex-grow-1">
+                            <MudText Typo="Typo.body1" Style="text-decoration: line-through">@item.Label</MudText>
+                            <MudText Typo="Typo.caption">@Describe(item)</MudText>
+                        </div>
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   OnClick="@(() => ReopenAsync(item))">
+                            @Localizer["Shopping.Reopen"]
+                        </MudButton>
+                    </div>
+
+                    @if (!ReferenceEquals(item, _settled[^1]))
+                    {
+                        <MudDivider/>
+                    }
+                }
+            </MudPaper>
+        }
+    }
+}

@@ -1,0 +1,101 @@
+@page "/purchases/{Id:long}"
+@inject PurchaseService Purchases
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Purchases.Detail"]</PageTitle>
+
+@if (_purchase is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-4">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1">
+                @(_purchase.StoreName ?? Localizer["Purchases.NoStore"].Value)
+            </MudText>
+            <MudText Typo="Typo.caption">
+                @_purchase.PurchasedAt.LocalDateTime.ToString("f")
+            </MudText>
+        </div>
+        <MudText Typo="Typo.h4">
+            @(_purchase.Total is { } total ? Units.Money(total) : "—")
+        </MudText>
+    </div>
+
+    <MudPaper Outlined="true">
+        @foreach (var line in _lines)
+        {
+            <div class="d-flex align-center gap-2 pa-3">
+                <div class="flex-grow-1">
+                    <MudText Typo="Typo.body1">
+                        <b>@line.Label</b>
+                        @if (line.LineType != PurchaseLineType.Item)
+                        {
+                            <MudChip T="string" Size="Size.Small" Class="ml-2" Variant="Variant.Text">
+                                @Localizer[$"LineType.{line.LineType}"]
+                            </MudChip>
+                        }
+                        @if (line.IsPromo)
+                        {
+                            <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Warning" Variant="Variant.Text">
+                                @Localizer["Purchases.PromoBadge"]
+                            </MudChip>
+                        }
+                    </MudText>
+                    <MudText Typo="Typo.caption">@Describe(line)</MudText>
+                </div>
+                <MudText Typo="Typo.body1" Class="flex-none">
+                    <b>@Units.Money(line.LineTotal)</b>
+                </MudText>
+            </div>
+            <MudDivider/>
+        }
+    </MudPaper>
+
+    <MudButton Href="/purchases"
+               Variant="Variant.Outlined"
+               Color="Color.Default"
+               Size="Size.Large"
+               Class="mt-4"
+               StartIcon="@Icons.Material.Filled.ArrowBack">
+        @Localizer["Purchases.Title"]
+    </MudButton>
+}
+
+@code {
+    [Parameter]
+    public long Id { get; set; }
+
+    private PurchaseRow? _purchase;
+    private IReadOnlyList<PurchaseLineRow> _lines = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _purchase = await Purchases.FindAsync(Id);
+        _lines = _purchase is null ? [] : await Purchases.GetLinesAsync(Id);
+    }
+
+    private string Describe(PurchaseLineRow line)
+    {
+        var parts = new List<string>(3);
+
+        if (line.LineType == PurchaseLineType.Item)
+        {
+            parts.Add(Localizer["Purchases.QuantityShort", line.Quantity]);
+
+            if (line.QuantityBase is { } quantityBase && line.BaseUnit is { } unit)
+            {
+                parts.Add(Units.Format(quantityBase, unit));
+
+                if (line.PricePerBaseUnit is { } price)
+                {
+                    parts.Add(Units.PricePerUnit(price, unit));
+                }
+            }
+        }
+
+        return string.Join(" · ", parts);
+    }
+}

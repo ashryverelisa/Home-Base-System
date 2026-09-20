@@ -1,0 +1,324 @@
+@page "/analytics"
+@inject AnalyticsService Analytics
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Analytics.Title"]</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Localizer["Analytics.Title"]</MudText>
+
+@if (_months is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else if (_months.Count == 0 && _deposit == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+        @Localizer["Analytics.Empty"]
+        <MudLink Href="/purchases/new">@Localizer["Purchases.New"]</MudLink>
+    </MudAlert>
+}
+else
+{
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h5">@Units.Money(CurrentMonthTotal)</MudText>
+                <MudText Typo="Typo.body2">@Localizer["Analytics.ThisMonth"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h5">@Units.Money(_months.Sum(m => m.Total))</MudText>
+                <MudText Typo="Typo.body2">@Localizer["Analytics.TwelveMonths"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h5">@Units.Money(WasteTotal)</MudText>
+                <MudText Typo="Typo.body2">@Localizer["Analytics.WasteTotal"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h5">@Units.Money(_deposit)</MudText>
+                <MudText Typo="Typo.body2">@Localizer["Analytics.DepositBalance"]</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudTabs Outlined="true" Rounded="true" ApplyEffectsToContainer="true">
+        <MudTabPanel Text="@Localizer["Analytics.TabSpending"]">
+            <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.PerMonth"]</MudText>
+
+            @if (_spendSeries.Count > 0)
+            {
+                <MudChart T="double"
+                          ChartType="ChartType.Bar"
+                          ChartSeries="@_spendSeries"
+                          ChartLabels="@_spendLabels"
+                          ChartOptions="@_spendOptions"
+                          Width="100%"
+                          Height="280px"/>
+            }
+
+            <MudPaper Outlined="true" Class="mb-6">
+                @foreach (var month in _months)
+                {
+                    <div class="d-flex justify-space-between align-center pa-3">
+                        <MudText Typo="Typo.body1">@MonthLabel(month.Month)</MudText>
+                        <MudText Typo="Typo.body1"><b>@Units.Money(month.Total)</b></MudText>
+                    </div>
+                    <MudDivider/>
+                }
+            </MudPaper>
+
+            @if (_stores is { Count: > 0 })
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.PerStore"]</MudText>
+                <MudPaper Outlined="true">
+                    @foreach (var store in _stores)
+                    {
+                        <div class="d-flex justify-space-between align-center pa-3">
+                            <MudText Typo="Typo.body1">@StoreLabel(store.StoreName)</MudText>
+                            <MudText Typo="Typo.body1"><b>@Units.Money(store.Total)</b></MudText>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@Localizer["Analytics.TabPrices"]">
+            @if (_products is { Count: > 0 })
+            {
+                <MudSelect T="int"
+                           Value="_productId"
+                           ValueChanged="SelectProductAsync"
+                           Label="@Localizer["Analytics.PickProduct"]"
+                           Variant="Variant.Outlined"
+                           Class="mb-4"
+                           Style="max-width: 24rem">
+                    @foreach (var product in _products)
+                    {
+                        <MudSelectItem T="int" Value="@product.ProductId">@product.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (_trendSeries.Count > 0)
+                {
+                    <MudText Typo="Typo.h6" Class="mb-2">
+                        @Localizer["Analytics.PriceTrend", SelectedProductName]
+                    </MudText>
+                    <MudChart T="double"
+                              ChartType="ChartType.Line"
+                              ChartSeries="@_trendSeries"
+                              ChartLabels="@_trendLabels"
+                              ChartOptions="@_priceOptions"
+                              Width="100%"
+                              Height="280px"/>
+                    <MudText Typo="Typo.caption" Class="d-block mb-4">
+                        @Localizer["Analytics.PriceTrendHint", SelectedUnitLabel]
+                    </MudText>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4">
+                        @Localizer["Analytics.NoTrend"]
+                    </MudAlert>
+                }
+
+                <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.StoreComparison"]</MudText>
+                @if (_comparison is { Count: > 0 })
+                {
+                    <MudPaper Outlined="true" Class="mb-6">
+                        @foreach (var store in _comparison)
+                        {
+                            <div class="d-flex justify-space-between align-start gap-3 pa-3">
+                                <div>
+                                    <MudText Typo="Typo.body1">@StoreLabel(store.StoreName)</MudText>
+                                    <MudText Typo="Typo.caption">
+                                        @Localizer["Analytics.PurchaseCount", store.Purchases]
+                                        @if (store.BestPrice is { } best && SelectedUnit is { } unit)
+                                        {
+                                            <span> · @Localizer["Analytics.BestPrice", Units.PricePerUnit(best, unit)]</span>
+                                        }
+                                    </MudText>
+                                </div>
+                                <MudText Typo="Typo.body1" Class="flex-none">
+                                    <b>
+                                        @(store.AveragePrice is { } average && SelectedUnit is { } unit
+                                            ? Units.PricePerUnit(average, unit)
+                                            : "—")
+                                    </b>
+                                </MudText>
+                            </div>
+                            <MudDivider/>
+                        }
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="mb-6">@Localizer["Analytics.NoComparison"]</MudText>
+                }
+
+                <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.PerProduct"]</MudText>
+                <MudPaper Outlined="true">
+                    @foreach (var product in _products)
+                    {
+                        <div class="d-flex justify-space-between align-start gap-3 pa-3">
+                            <div>
+                                <MudText Typo="Typo.body1"><b>@product.Name</b></MudText>
+                                <MudText Typo="Typo.caption">
+                                    @(product.LastPrice is { } price
+                                        ? Units.PricePerUnit(price, product.BaseUnit)
+                                        : Localizer["Analytics.NoPrice"].Value)
+                                </MudText>
+                            </div>
+                            <div class="text-right flex-none">
+                                <MudText Typo="Typo.body1"><b>@Units.Money(product.TotalSpend)</b></MudText>
+                                @if (product.Change is { } change && change != 0)
+                                {
+                                    <MudText Typo="Typo.caption"
+                                             Color="@(product.IsCheaper ? Color.Success : Color.Error)">
+                                        <MudIcon Icon="@(product.IsCheaper ? Icons.Material.Filled.TrendingDown : Icons.Material.Filled.TrendingUp)"
+                                                 Size="Size.Small"/>
+                                        @Units.PricePerUnit(Math.Abs(change), product.BaseUnit)
+                                    </MudText>
+                                }
+                            </div>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["Analytics.NoPriceData"]</MudAlert>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@Localizer["Analytics.TabIndex"]">
+            @if (_indexSeries.Count > 0)
+            {
+                <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.BasketIndex"]</MudText>
+                <MudChart T="double"
+                          ChartType="ChartType.Line"
+                          ChartSeries="@_indexSeries"
+                          ChartLabels="@_indexLabels"
+                          ChartOptions="@_indexOptions"
+                          Width="100%"
+                          Height="280px"/>
+                <MudText Typo="Typo.caption" Class="d-block mb-4">@Localizer["Analytics.BasketIndexHint"]</MudText>
+
+                <MudPaper Outlined="true">
+                    @foreach (var point in _index!.OrderByDescending(p => p.Month))
+                    {
+                        <div class="d-flex justify-space-between align-center pa-3">
+                            <MudText Typo="Typo.body1">@MonthLabel(point.Month)</MudText>
+                            <MudText Typo="Typo.body1">
+                                <b>@point.Index.ToString("N1", Culture)</b>
+                                <MudText Typo="Typo.caption" Class="d-inline ml-2">
+                                    @Localizer["Analytics.IndexProducts", point.Products]
+                                </MudText>
+                            </MudText>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["Analytics.NoIndex"]</MudAlert>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@Localizer["Analytics.TabWaste"]">
+            <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.WastePerMonth"]</MudText>
+            @if (_waste is { Count: > 0 })
+            {
+                <MudPaper Outlined="true" Class="mb-4">
+                    @foreach (var month in _waste)
+                    {
+                        <div class="d-flex justify-space-between align-center pa-3">
+                            <MudText Typo="Typo.body1">@MonthLabel(month.Month)</MudText>
+                            <MudText Typo="Typo.body1"><b>@Units.Money(month.Cost)</b></MudText>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+
+                @if (_wastedProducts is { Count: > 0 })
+                {
+                    <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.WasteProducts"]</MudText>
+                    <MudPaper Outlined="true" Class="mb-6">
+                        @foreach (var product in _wastedProducts)
+                        {
+                            <div class="d-flex justify-space-between align-center pa-3">
+                                <MudText Typo="Typo.body1">@product.Name</MudText>
+                                <MudText Typo="Typo.body1"><b>@Units.Money(product.Cost)</b></MudText>
+                            </div>
+                            <MudDivider/>
+                        }
+                    </MudPaper>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="mb-6">@Localizer["Analytics.NoWaste"]</MudText>
+            }
+
+            <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.Reach"]</MudText>
+            @if (_reach is { Count: > 0 })
+            {
+                <MudPaper Outlined="true" Class="mb-6">
+                    @foreach (var row in _reach)
+                    {
+                        <div class="d-flex justify-space-between align-start gap-3 pa-3">
+                            <div>
+                                <MudText Typo="Typo.body1">@row.Name</MudText>
+                                <MudText Typo="Typo.caption">
+                                    @Localizer["Analytics.PerWeek", Units.Format(row.PerWeek, row.BaseUnit)]
+                                    · @Units.Format(row.StockBase, row.BaseUnit)
+                                </MudText>
+                            </div>
+                            <MudText Typo="Typo.body1"
+                                     Class="flex-none"
+                                     Color="@(row.RunsOutSoon ? Color.Warning : Color.Inherit)">
+                                <b>@Localizer["Analytics.DaysLeft", Math.Round(row.DaysLeft)]</b>
+                            </MudText>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="mb-6">@Localizer["Analytics.NoReach"]</MudText>
+            }
+
+            <MudText Typo="Typo.h6" Class="mb-2">@Localizer["Analytics.PromoSavings"]</MudText>
+            @if (_savings is { Count: > 0 })
+            {
+                <MudPaper Outlined="true">
+                    @foreach (var month in _savings)
+                    {
+                        <div class="d-flex justify-space-between align-start gap-3 pa-3">
+                            <div>
+                                <MudText Typo="Typo.body1">@MonthLabel(month.Month)</MudText>
+                                <MudText Typo="Typo.caption">
+                                    @Localizer["Analytics.DiscountLines", Units.Money(month.Discount)]
+                                </MudText>
+                            </div>
+                            <MudText Typo="Typo.body1" Class="flex-none"><b>@Units.Money(month.Total)</b></MudText>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2">@Localizer["Analytics.NoSavings"]</MudText>
+            }
+        </MudTabPanel>
+    </MudTabs>
+}

@@ -430,3 +430,6 @@ FodyWeavers.xsd
 
 # Rider
 /src/.idea/
+
+# Uploaded asset documents
+**/App_Data/

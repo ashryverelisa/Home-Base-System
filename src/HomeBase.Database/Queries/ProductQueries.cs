@@ -14,6 +14,9 @@ public static class ProductQueries
             || (p.Brand != null && EF.Functions.ILike(p.Brand, $"%{term}%"))
             || (p.Gtin != null && p.Gtin == term));
 
+    public static IQueryable<Product> WithMinimumStock(this IQueryable<Product> products) =>
+        products.Where(p => p.MinStockBase != null && p.MinStockBase > 0);
+
     public static Task<Product?> ByGtinAsync(
         this IQueryable<Product> products,
         string gtin,

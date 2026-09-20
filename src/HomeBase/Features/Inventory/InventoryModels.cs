@@ -1,3 +1,5 @@
+using HomeBase.Database.Enums;
+
 namespace HomeBase.Features.Inventory;
 
 public sealed record BookInRequest(
@@ -7,6 +9,14 @@ public sealed record BookInRequest(
     DateOnly? BestBefore,
     long? PurchaseItemId = null,
     string? Note = null
+);
+
+public sealed record LowStockRow(
+    int ProductId,
+    string Name,
+    BaseUnit BaseUnit,
+    decimal StockBase,
+    decimal MinStockBase
 );
 
 public sealed record StockChangeResult(decimal Applied, decimal Shortfall)

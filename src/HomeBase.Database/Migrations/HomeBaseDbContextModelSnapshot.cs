@@ -63,6 +63,10 @@ namespace HomeBase.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
+                    b.Property<DateOnly?>("NextServiceAt")
+                        .HasColumnType("date")
+                        .HasColumnName("next_service_at");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text")
                         .HasColumnName("notes");
@@ -88,6 +92,10 @@ namespace HomeBase.Database.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("serial_number");
+
+                    b.Property<int?>("ServiceIntervalDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("service_interval_days");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1073,6 +1081,262 @@ namespace HomeBase.Database.Migrations
                         .HasName("pk_store");
 
                     b.ToTable("store", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.BasketIndexPoint", b =>
+                {
+                    b.Property<decimal?>("IndexValue")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("index_value");
+
+                    b.Property<DateTimeOffset>("Month")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("month");
+
+                    b.Property<int>("Products")
+                        .HasColumnType("integer")
+                        .HasColumnName("products");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_basket_index", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.BestStorePrice", b =>
+                {
+                    b.Property<decimal?>("AveragePrice")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)")
+                        .HasColumnName("average_price");
+
+                    b.Property<decimal?>("BestPrice")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)")
+                        .HasColumnName("best_price");
+
+                    b.Property<DateTimeOffset?>("LastSeen")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<int>("Purchases")
+                        .HasColumnType("integer")
+                        .HasColumnName("purchases");
+
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer")
+                        .HasColumnName("store_id");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_best_store", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.ConsumptionRate", b =>
+                {
+                    b.Property<decimal?>("PerWeek")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("per_week");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_consumption_rate", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.DepositBalance", b =>
+                {
+                    b.Property<decimal?>("OpenDeposit")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("open_deposit");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_deposit_balance", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.EffectiveLine", b =>
+                {
+                    b.Property<decimal?>("EffectivePricePerBaseUnit")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)")
+                        .HasColumnName("effective_price_per_base_unit");
+
+                    b.Property<decimal>("EffectiveTotal")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("effective_total");
+
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsPromo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_promo");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<long>("PurchaseId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("purchase_id");
+
+                    b.Property<decimal?>("QuantityBase")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("quantity_base");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_effective_line", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.MonthlySpend", b =>
+                {
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTimeOffset>("Month")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("month");
+
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer")
+                        .HasColumnName("store_id");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("total");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_monthly_spend", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.PricePoint", b =>
+                {
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<bool>("IsPromo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_promo");
+
+                    b.Property<decimal?>("PrevPrice")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)")
+                        .HasColumnName("prev_price");
+
+                    b.Property<decimal?>("PricePerBaseUnit")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)")
+                        .HasColumnName("price_per_base_unit");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer")
+                        .HasColumnName("store_id");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_price_history", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.PromoSaving", b =>
+                {
+                    b.Property<decimal>("DiscountTotal")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("discount_total");
+
+                    b.Property<DateTimeOffset>("Month")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("month");
+
+                    b.Property<decimal?>("SavedAgainstNormal")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("saved_against_normal");
+
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer")
+                        .HasColumnName("store_id");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_promo_savings", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.ReachDays", b =>
+                {
+                    b.Property<decimal?>("DaysLeft")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("days_left");
+
+                    b.Property<decimal?>("PerWeek")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("per_week");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("StockBase")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("stock_base");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_reach_days", (string)null);
+                });
+
+            modelBuilder.Entity("HomeBase.Database.Views.WasteCost", b =>
+                {
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer")
+                        .HasColumnName("category_id");
+
+                    b.Property<decimal>("Cost")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("cost");
+
+                    b.Property<DateTimeOffset>("Month")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("month");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("QuantityBase")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("quantity_base");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("v_waste_cost", (string)null);
                 });
 
             modelBuilder.Entity("HomeBase.Database.Entities.Asset", b =>

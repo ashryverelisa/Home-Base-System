@@ -39,6 +39,26 @@ public static class Units
             }
         );
 
+    public static string DisplayAbbreviation(BaseUnit unit) =>
+        AppStrings.Get(
+            unit switch
+            {
+                BaseUnit.Gram => "Unit.Kilogram.Abbreviation",
+                BaseUnit.Milliliter => "Unit.Liter.Abbreviation",
+                _ => "Unit.Piece.Abbreviation",
+            }
+        );
+
+    public static string PricePerUnit(decimal pricePerBaseUnit, BaseUnit unit) =>
+        unit switch
+        {
+            BaseUnit.Gram =>
+                $"{Money(pricePerBaseUnit * 1000)}/{AppStrings.Get("Unit.Kilogram.Abbreviation")}",
+            BaseUnit.Milliliter =>
+                $"{Money(pricePerBaseUnit * 1000)}/{AppStrings.Get("Unit.Liter.Abbreviation")}",
+            _ => $"{Money(pricePerBaseUnit)}/{AppStrings.Get("Unit.Piece.Abbreviation")}",
+        };
+
     public static string Money(decimal amount) =>
         AppStrings.Format("Common.MoneyFormat", amount.ToString("N2", CultureInfo.CurrentCulture));
 

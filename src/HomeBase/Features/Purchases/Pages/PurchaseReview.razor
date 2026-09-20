@@ -1,0 +1,137 @@
+@page "/purchases/{Id:long}/review"
+@inject PurchaseService Purchases
+@inject ReviewService Review
+@inject CatalogService Catalog
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Review.Title"]</PageTitle>
+
+@if (_purchase is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-2">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1">@Localizer["Review.Title"]</MudText>
+            <MudText Typo="Typo.caption">
+                @(_purchase.StoreName ?? Localizer["Purchases.NoStore"].Value)
+                · @_purchase.PurchasedAt.LocalDateTime.ToString("f")
+            </MudText>
+        </div>
+        <MudText Typo="Typo.h5">
+            @(_purchase.Total is { } total ? Units.Money(total) : "—")
+        </MudText>
+    </div>
+
+    @if (_purchase.Total is { } receiptTotal && receiptTotal != _lineSum)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+            @Localizer["Purchases.TotalMismatch", Units.Money(_lineSum), Units.Money(receiptTotal)]
+        </MudAlert>
+    }
+
+    <MudAlert Severity="@(_openCount > 0 ? Severity.Info : Severity.Success)"
+              Variant="Variant.Outlined"
+              Class="mb-4">
+        @(_openCount > 0
+            ? Localizer["Review.OpenLines", _openCount]
+            : Localizer["Review.AllMatched"])
+    </MudAlert>
+
+    <MudPaper Outlined="true" Class="mb-4">
+        @foreach (var line in _lines)
+        {
+            <div class="pa-3">
+                <div class="d-flex justify-space-between align-start gap-3">
+                    <div>
+                        <MudText Typo="Typo.body1"><b>@line.Label</b></MudText>
+                        <MudText Typo="Typo.caption">
+                            <span>@Localizer[$"LineType.{line.LineType}"]</span>
+                            <span> · @MatchLabel(line)</span>
+                            @if (line.RawText is { Length: > 0 } raw && line.ProductName is not null)
+                            {
+                                <span> · @raw</span>
+                            }
+                        </MudText>
+                    </div>
+                    <MudText Typo="Typo.body1" Class="flex-none"><b>@Units.Money(line.LineTotal)</b></MudText>
+                </div>
+
+                @if (line.LineType == PurchaseLineType.Item)
+                {
+                    <div class="d-flex flex-wrap align-center gap-3 mt-2">
+                        <MudSwitch T="bool"
+                                   Value="line.IsPromo"
+                                   ValueChanged="@(value => SetPromoAsync(line, value))"
+                                   Color="Color.Warning">
+                            @Localizer["Purchases.IsPromo"]
+                        </MudSwitch>
+
+                        @if (line.PromoHint && !line.IsPromo)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">
+                                @Localizer["Review.PromoHint"]
+                            </MudChip>
+                        }
+                    </div>
+                }
+
+                @if (line.NeedsAssignment)
+                {
+                    <div class="d-flex flex-wrap align-center gap-3 mt-2">
+                        <MudAutocomplete T="ProductRow"
+                                         Value="@Pick(line)"
+                                         ValueChanged="@(row => _picks[line.Id] = row)"
+                                         SearchFunc="SearchProductsAsync"
+                                         ToStringFunc="@(row => row?.Name ?? string.Empty)"
+                                         CoerceText="false"
+                                         Clearable="true"
+                                         ResetValueOnEmptyText="true"
+                                         Variant="Variant.Outlined"
+                                         Margin="Margin.Dense"
+                                         Label="@Localizer["Purchases.Product"]"
+                                         Style="min-width: 16rem"/>
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Disabled="@(_busy || Pick(line) is null)"
+                                   OnClick="@(() => AssignAsync(line))">
+                            @Localizer["Review.Assign"]
+                        </MudButton>
+
+                        @if (line.SuggestedProductId is { } suggestedId && line.SuggestedProductName is { } suggestedName)
+                        {
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       Disabled="_busy"
+                                       OnClick="@(() => AssignSuggestionAsync(line, suggestedId))">
+                                @Localizer["Review.TakeSuggestion", suggestedName]
+                            </MudButton>
+                        }
+                    </div>
+                }
+            </div>
+            <MudDivider/>
+        }
+    </MudPaper>
+
+    <div class="d-flex flex-wrap gap-3">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   Disabled="@(_busy || _openCount > 0 || _confirmed)"
+                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                   OnClick="@ConfirmAsync">
+            @Localizer["Review.Confirm"]
+        </MudButton>
+        <MudButton Href="@($"/purchases/{Id}")"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   Size="Size.Large">
+            @Localizer["Purchases.Detail"]
+        </MudButton>
+    </div>
+}

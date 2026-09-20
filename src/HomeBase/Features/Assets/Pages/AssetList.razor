@@ -1,0 +1,97 @@
+@page "/assets"
+@inject AssetService Equipment
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Assets.Title"]</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">@Localizer["Assets.Title"]</MudText>
+    <MudButton Href="/assets/new"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.Add">
+        @Localizer["Assets.New"]
+    </MudButton>
+</div>
+
+<MudTextField T="string"
+              Value="_term"
+              ValueChanged="SearchAsync"
+              Immediate="true"
+              DebounceInterval="200"
+              Clearable="true"
+              Variant="Variant.Outlined"
+              Placeholder="@Localizer["Assets.SearchPlaceholder"]"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              Class="mb-3"/>
+
+<div class="d-flex flex-wrap gap-4 mb-4">
+    <MudSwitch @bind-Value="WarrantyFilter" Color="Color.Warning">
+        @Localizer["Assets.FilterWarranty", AssetRow.WarrantyWarningDays]
+    </MudSwitch>
+    <MudSwitch @bind-Value="ServiceFilter" Color="Color.Warning">
+        @Localizer["Assets.FilterService"]
+    </MudSwitch>
+    <MudSwitch @bind-Value="RetiredFilter" Color="Color.Default">
+        @Localizer["Assets.FilterRetired"]
+    </MudSwitch>
+</div>
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else if (_rows.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["Assets.Empty"]</MudAlert>
+}
+else
+{
+    <MudPaper Outlined="true">
+        <MudList T="string">
+            @foreach (var row in _rows)
+            {
+                <MudListItem T="string" Href="@($"/assets/{row.Id}")">
+                    <div class="d-flex justify-space-between align-start gap-3">
+                        <div>
+                            <MudText Typo="Typo.body1">
+                                <b>@row.Name</b>
+                                @if (row.Status != AssetStatus.InUse)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Class="ml-2" Variant="Variant.Text">
+                                        @Localizer[$"AssetStatus.{row.Status}"]
+                                    </MudChip>
+                                }
+                                @if (row.ServiceDue)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Warning" Variant="Variant.Text">
+                                        @Localizer["Assets.ServiceDueBadge"]
+                                    </MudChip>
+                                }
+                            </MudText>
+                            <MudText Typo="Typo.caption">
+                                @if (!string.IsNullOrWhiteSpace(row.CategoryName))
+                                {
+                                    <span>@row.CategoryName · </span>
+                                }
+                                <span>@(row.LocationName ?? Localizer["Assets.NoLocation"].Value)</span>
+                                @if (row.DocumentCount > 0)
+                                {
+                                    <span> · @Localizer["Assets.DocumentCount", row.DocumentCount]</span>
+                                }
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="@WarrantyColor(row)">
+                                @WarrantyText(row)
+                            </MudText>
+                        </div>
+                        <MudText Typo="Typo.body1" Class="flex-none">
+                            <b>@((row.CurrentValue ?? row.PurchasePrice) is { } value ? Units.Money(value) : string.Empty)</b>
+                        </MudText>
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}

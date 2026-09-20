@@ -82,8 +82,26 @@
   <data name="Nav.Stock" xml:space="preserve">
     <value>Stock</value>
   </data>
+  <data name="Nav.Shopping" xml:space="preserve">
+    <value>Shopping</value>
+  </data>
   <data name="Nav.Products" xml:space="preserve">
     <value>Products</value>
+  </data>
+  <data name="Nav.Purchases" xml:space="preserve">
+    <value>Purchases</value>
+  </data>
+  <data name="Nav.Analytics" xml:space="preserve">
+    <value>Analytics</value>
+  </data>
+  <data name="Nav.Assets" xml:space="preserve">
+    <value>Assets</value>
+  </data>
+  <data name="Nav.Recipes" xml:space="preserve">
+    <value>Recipes</value>
+  </data>
+  <data name="Nav.Plan" xml:space="preserve">
+    <value>Meal plan</value>
   </data>
   <data name="Nav.Menu" xml:space="preserve">
     <value>Navigation menu</value>
@@ -114,6 +132,9 @@
   </data>
   <data name="Home.AlreadyExpired" xml:space="preserve">
     <value>already expired</value>
+  </data>
+  <data name="Home.OpenShoppingItems" xml:space="preserve">
+    <value>open list items</value>
   </data>
   <data name="Home.UseNext" xml:space="preserve">
     <value>Use next</value>
@@ -303,6 +324,642 @@
   </data>
   <data name="Catalog.GtinTaken" xml:space="preserve">
     <value>Barcode {0} already belongs to another product.</value>
+  </data>
+  <data name="Shopping.Title" xml:space="preserve">
+    <value>Shopping lists</value>
+  </data>
+  <data name="Shopping.AddLabel" xml:space="preserve">
+    <value>What is missing?</value>
+  </data>
+  <data name="Shopping.AddHint" xml:space="preserve">
+    <value>Pick a product or just type it in.</value>
+  </data>
+  <data name="Shopping.Add" xml:space="preserve">
+    <value>Add to list</value>
+  </data>
+  <data name="Shopping.Quantity" xml:space="preserve">
+    <value>Quantity ({0})</value>
+  </data>
+  <data name="Shopping.Empty" xml:space="preserve">
+    <value>Nothing open on this list.</value>
+  </data>
+  <data name="Shopping.AutoBadge" xml:space="preserve">
+    <value>Restock</value>
+  </data>
+  <data name="Shopping.Important" xml:space="preserve">
+    <value>Important</value>
+  </data>
+  <data name="Shopping.Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Shopping.ShowDone" xml:space="preserve">
+    <value>Show done</value>
+  </data>
+  <data name="Shopping.HideDone" xml:space="preserve">
+    <value>Hide done</value>
+  </data>
+  <data name="Shopping.ClearDone" xml:space="preserve">
+    <value>Clear done</value>
+  </data>
+  <data name="Shopping.NoneDone" xml:space="preserve">
+    <value>Nothing ticked off yet.</value>
+  </data>
+  <data name="Shopping.Reopen" xml:space="preserve">
+    <value>Back on the list</value>
+  </data>
+  <data name="Shopping.TextRequired" xml:space="preserve">
+    <value>Please type something or pick a product.</value>
+  </data>
+  <data name="Purchases.Title" xml:space="preserve">
+    <value>Purchases</value>
+  </data>
+  <data name="Purchases.New" xml:space="preserve">
+    <value>Record a purchase</value>
+  </data>
+  <data name="Purchases.Detail" xml:space="preserve">
+    <value>Purchase</value>
+  </data>
+  <data name="Purchases.Empty" xml:space="preserve">
+    <value>No purchases recorded yet. Type in a receipt by hand — that is where the price data starts.</value>
+  </data>
+  <data name="Purchases.NoStore" xml:space="preserve">
+    <value>no store</value>
+  </data>
+  <data name="Purchases.LineCount" xml:space="preserve">
+    <value>{0} lines</value>
+  </data>
+  <data name="Purchases.Store" xml:space="preserve">
+    <value>Store</value>
+  </data>
+  <data name="Purchases.StoreHint" xml:space="preserve">
+    <value>A new name creates the store.</value>
+  </data>
+  <data name="Purchases.PurchasedAt" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Purchases.PaymentMethod" xml:space="preserve">
+    <value>Payment method</value>
+  </data>
+  <data name="Purchases.AddLine" xml:space="preserve">
+    <value>Add line</value>
+  </data>
+  <data name="Purchases.Product" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Purchases.Quantity" xml:space="preserve">
+    <value>Count</value>
+  </data>
+  <data name="Purchases.QuantityBase" xml:space="preserve">
+    <value>Quantity ({0})</value>
+  </data>
+  <data name="Purchases.QuantityShort" xml:space="preserve">
+    <value>{0} ×</value>
+  </data>
+  <data name="Purchases.LineTotal" xml:space="preserve">
+    <value>Line total</value>
+  </data>
+  <data name="Purchases.Credit" xml:space="preserve">
+    <value>Amount (deducted)</value>
+  </data>
+  <data name="Purchases.LineText" xml:space="preserve">
+    <value>Text on the receipt</value>
+  </data>
+  <data name="Purchases.IsPromo" xml:space="preserve">
+    <value>Promo price</value>
+  </data>
+  <data name="Purchases.PromoBadge" xml:space="preserve">
+    <value>Promo</value>
+  </data>
+  <data name="Purchases.BelongsTo" xml:space="preserve">
+    <value>Belongs to line</value>
+  </data>
+  <data name="Purchases.BelongsToShort" xml:space="preserve">
+    <value>on {0}</value>
+  </data>
+  <data name="Purchases.RemoveLine" xml:space="preserve">
+    <value>Remove line</value>
+  </data>
+  <data name="Purchases.LineSum" xml:space="preserve">
+    <value>Sum of lines</value>
+  </data>
+  <data name="Purchases.ReceiptTotal" xml:space="preserve">
+    <value>Receipt total</value>
+  </data>
+  <data name="Purchases.ReceiptTotalHint" xml:space="preserve">
+    <value>Optional — used as a checksum.</value>
+  </data>
+  <data name="Purchases.BookIntoStock" xml:space="preserve">
+    <value>Book items into stock</value>
+  </data>
+  <data name="Purchases.NoLines" xml:space="preserve">
+    <value>The purchase has no lines yet.</value>
+  </data>
+  <data name="Purchases.ProductRequired" xml:space="preserve">
+    <value>An item line needs a product.</value>
+  </data>
+  <data name="Purchases.TextRequired" xml:space="preserve">
+    <value>Please enter a text for the line.</value>
+  </data>
+  <data name="Purchases.AmountRequired" xml:space="preserve">
+    <value>Please enter an amount.</value>
+  </data>
+  <data name="Purchases.TotalMismatch" xml:space="preserve">
+    <value>The lines add up to {0}, the receipt says {1}. Please check.</value>
+  </data>
+  <data name="LineType.Item" xml:space="preserve">
+    <value>Item</value>
+  </data>
+  <data name="LineType.Deposit" xml:space="preserve">
+    <value>Deposit</value>
+  </data>
+  <data name="LineType.DepositReturn" xml:space="preserve">
+    <value>Deposit return</value>
+  </data>
+  <data name="LineType.Discount" xml:space="preserve">
+    <value>Discount</value>
+  </data>
+  <data name="LineType.Fee" xml:space="preserve">
+    <value>Fee</value>
+  </data>
+  <data name="Analytics.Title" xml:space="preserve">
+    <value>Analytics</value>
+  </data>
+  <data name="Analytics.Empty" xml:space="preserve">
+    <value>No price data yet. This page fills up once purchases are recorded.</value>
+  </data>
+  <data name="Analytics.ThisMonth" xml:space="preserve">
+    <value>this month</value>
+  </data>
+  <data name="Analytics.TwelveMonths" xml:space="preserve">
+    <value>last 12 months</value>
+  </data>
+  <data name="Analytics.DepositBalance" xml:space="preserve">
+    <value>deposit out there</value>
+  </data>
+  <data name="Analytics.PerMonth" xml:space="preserve">
+    <value>Spending per month</value>
+  </data>
+  <data name="Analytics.PerStore" xml:space="preserve">
+    <value>Spending per store</value>
+  </data>
+  <data name="Analytics.PerProduct" xml:space="preserve">
+    <value>Spending per product</value>
+  </data>
+  <data name="Analytics.NoPrice" xml:space="preserve">
+    <value>no regular price recorded</value>
+  </data>
+  <data name="Review.Title" xml:space="preserve">
+    <value>Review receipt</value>
+  </data>
+  <data name="Review.OpenLines" xml:space="preserve">
+    <value>{0} lines without a product</value>
+  </data>
+  <data name="Review.AllMatched" xml:space="preserve">
+    <value>Every line is matched.</value>
+  </data>
+  <data name="Review.Assign" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="Review.TakeSuggestion" xml:space="preserve">
+    <value>Suggestion: {0}</value>
+  </data>
+  <data name="Review.Suggestion" xml:space="preserve">
+    <value>Suggestion: {0}</value>
+  </data>
+  <data name="Review.Confirm" xml:space="preserve">
+    <value>Confirm and book in</value>
+  </data>
+  <data name="Review.PromoHint" xml:space="preserve">
+    <value>Price unusually low — promo?</value>
+  </data>
+  <data name="Review.Unmatched" xml:space="preserve">
+    <value>no product recognised</value>
+  </data>
+  <data name="Review.MatchedBy" xml:space="preserve">
+    <value>{0} ({1:P0})</value>
+  </data>
+  <data name="Review.NoProductNeeded" xml:space="preserve">
+    <value>not a product line</value>
+  </data>
+  <data name="MatchStatus.Unmatched" xml:space="preserve">
+    <value>open</value>
+  </data>
+  <data name="MatchStatus.Gtin" xml:space="preserve">
+    <value>by barcode</value>
+  </data>
+  <data name="MatchStatus.Alias" xml:space="preserve">
+    <value>by alias</value>
+  </data>
+  <data name="MatchStatus.Fuzzy" xml:space="preserve">
+    <value>by similarity</value>
+  </data>
+  <data name="MatchStatus.Manual" xml:space="preserve">
+    <value>by hand</value>
+  </data>
+  <data name="Purchases.ReviewBadge" xml:space="preserve">
+    <value>needs review</value>
+  </data>
+  <data name="Purchases.Review" xml:space="preserve">
+    <value>Review</value>
+  </data>
+  <data name="Assets.Title" xml:space="preserve">
+    <value>Assets</value>
+  </data>
+  <data name="Assets.New" xml:space="preserve">
+    <value>New asset</value>
+  </data>
+  <data name="Assets.SearchPlaceholder" xml:space="preserve">
+    <value>Name, serial number or note</value>
+  </data>
+  <data name="Assets.Empty" xml:space="preserve">
+    <value>No assets found.</value>
+  </data>
+  <data name="Assets.FilterWarranty" xml:space="preserve">
+    <value>Warranty ends within {0} days</value>
+  </data>
+  <data name="Assets.FilterService" xml:space="preserve">
+    <value>Service due</value>
+  </data>
+  <data name="Assets.FilterRetired" xml:space="preserve">
+    <value>Show retired</value>
+  </data>
+  <data name="Assets.NoLocation" xml:space="preserve">
+    <value>no location</value>
+  </data>
+  <data name="Assets.DocumentCount" xml:space="preserve">
+    <value>{0} documents</value>
+  </data>
+  <data name="Assets.NoWarranty" xml:space="preserve">
+    <value>no warranty recorded</value>
+  </data>
+  <data name="Assets.WarrantyExpired" xml:space="preserve">
+    <value>Warranty expired on {0}</value>
+  </data>
+  <data name="Assets.WarrantyLeft" xml:space="preserve">
+    <value>Warranty for another {0} days (until {1})</value>
+  </data>
+  <data name="Assets.ServiceDueBadge" xml:space="preserve">
+    <value>service due</value>
+  </data>
+  <data name="Assets.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Assets.SerialNumber" xml:space="preserve">
+    <value>Serial number</value>
+  </data>
+  <data name="Assets.Status" xml:space="preserve">
+    <value>Condition</value>
+  </data>
+  <data name="Assets.PurchasedAt" xml:space="preserve">
+    <value>Purchased on</value>
+  </data>
+  <data name="Assets.PurchasePrice" xml:space="preserve">
+    <value>Purchase price</value>
+  </data>
+  <data name="Assets.CurrentValue" xml:space="preserve">
+    <value>Current value</value>
+  </data>
+  <data name="Assets.WarrantyUntil" xml:space="preserve">
+    <value>Warranty until</value>
+  </data>
+  <data name="Assets.NextService" xml:space="preserve">
+    <value>Next service</value>
+  </data>
+  <data name="Assets.ServiceInterval" xml:space="preserve">
+    <value>Service interval (days)</value>
+  </data>
+  <data name="Assets.ServiceIntervalHint" xml:space="preserve">
+    <value>Used to set the next date once a service is done.</value>
+  </data>
+  <data name="Assets.ServiceDone" xml:space="preserve">
+    <value>Service done</value>
+  </data>
+  <data name="Assets.Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Assets.Attributes" xml:space="preserve">
+    <value>Custom fields</value>
+  </data>
+  <data name="Assets.AttributeKey" xml:space="preserve">
+    <value>Field</value>
+  </data>
+  <data name="Assets.AttributeValue" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="Assets.AddAttribute" xml:space="preserve">
+    <value>Add field</value>
+  </data>
+  <data name="Assets.Documents" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="Assets.NoDocuments" xml:space="preserve">
+    <value>No documents attached yet.</value>
+  </data>
+  <data name="Assets.DocumentType" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="Assets.Upload" xml:space="preserve">
+    <value>Upload file</value>
+  </data>
+  <data name="Assets.DeleteDocument" xml:space="preserve">
+    <value>Delete document</value>
+  </data>
+  <data name="Assets.FileTooLarge" xml:space="preserve">
+    <value>The file is larger than {0} MB.</value>
+  </data>
+  <data name="Assets.NameRequired" xml:space="preserve">
+    <value>A name is required.</value>
+  </data>
+  <data name="AssetStatus.InUse" xml:space="preserve">
+    <value>in use</value>
+  </data>
+  <data name="AssetStatus.Stored" xml:space="preserve">
+    <value>stored</value>
+  </data>
+  <data name="AssetStatus.Broken" xml:space="preserve">
+    <value>broken</value>
+  </data>
+  <data name="AssetStatus.Sold" xml:space="preserve">
+    <value>sold</value>
+  </data>
+  <data name="AssetStatus.Disposed" xml:space="preserve">
+    <value>disposed</value>
+  </data>
+  <data name="AssetDocumentType.Invoice" xml:space="preserve">
+    <value>Invoice</value>
+  </data>
+  <data name="AssetDocumentType.Manual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="AssetDocumentType.Photo" xml:space="preserve">
+    <value>Photo</value>
+  </data>
+  <data name="AssetDocumentType.Warranty" xml:space="preserve">
+    <value>Warranty</value>
+  </data>
+  <data name="Analytics.TabSpending" xml:space="preserve">
+    <value>Spending</value>
+  </data>
+  <data name="Analytics.TabPrices" xml:space="preserve">
+    <value>Prices</value>
+  </data>
+  <data name="Analytics.TabIndex" xml:space="preserve">
+    <value>Basket</value>
+  </data>
+  <data name="Analytics.TabWaste" xml:space="preserve">
+    <value>Waste &amp; stock</value>
+  </data>
+  <data name="Analytics.WasteTotal" xml:space="preserve">
+    <value>Waste, 12 months</value>
+  </data>
+  <data name="Analytics.PickProduct" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Analytics.PriceTrend" xml:space="preserve">
+    <value>Price trend: {0}</value>
+  </data>
+  <data name="Analytics.PriceTrendHint" xml:space="preserve">
+    <value>Monthly average per {0}, regular prices only; a price holds until the next purchase.</value>
+  </data>
+  <data name="Analytics.NoTrend" xml:space="preserve">
+    <value>No price trend for this product yet.</value>
+  </data>
+  <data name="Analytics.StoreComparison" xml:space="preserve">
+    <value>Store comparison</value>
+  </data>
+  <data name="Analytics.NoComparison" xml:space="preserve">
+    <value>No comparison data for this product yet.</value>
+  </data>
+  <data name="Analytics.PurchaseCount" xml:space="preserve">
+    <value>{0} purchases</value>
+  </data>
+  <data name="Analytics.BestPrice" xml:space="preserve">
+    <value>best price {0}</value>
+  </data>
+  <data name="Analytics.NoPriceData" xml:space="preserve">
+    <value>No price data yet.</value>
+  </data>
+  <data name="Analytics.BasketIndex" xml:space="preserve">
+    <value>Basket index</value>
+  </data>
+  <data name="Analytics.BasketIndexHint" xml:space="preserve">
+    <value>100 = each product's first recorded regular price, weighted by the quantity bought. Promos stay out.</value>
+  </data>
+  <data name="Analytics.IndexProducts" xml:space="preserve">
+    <value>{0} products</value>
+  </data>
+  <data name="Analytics.NoIndex" xml:space="preserve">
+    <value>The index needs regular prices from several months.</value>
+  </data>
+  <data name="Analytics.WastePerMonth" xml:space="preserve">
+    <value>Waste per month</value>
+  </data>
+  <data name="Analytics.WasteProducts" xml:space="preserve">
+    <value>Most thrown away</value>
+  </data>
+  <data name="Analytics.NoWaste" xml:space="preserve">
+    <value>Nothing booked as waste — good.</value>
+  </data>
+  <data name="Analytics.Reach" xml:space="preserve">
+    <value>Days of stock left</value>
+  </data>
+  <data name="Analytics.PerWeek" xml:space="preserve">
+    <value>{0} per week</value>
+  </data>
+  <data name="Analytics.DaysLeft" xml:space="preserve">
+    <value>{0} days left</value>
+  </data>
+  <data name="Analytics.NoReach" xml:space="preserve">
+    <value>Not enough consumption recorded to estimate reach.</value>
+  </data>
+  <data name="Analytics.PromoSavings" xml:space="preserve">
+    <value>Savings from promos</value>
+  </data>
+  <data name="Analytics.DiscountLines" xml:space="preserve">
+    <value>of which discount lines {0}</value>
+  </data>
+  <data name="Analytics.NoSavings" xml:space="preserve">
+    <value>No promo purchases recorded yet.</value>
+  </data>
+  <data name="Recipes.Title" xml:space="preserve">
+    <value>Recipes</value>
+  </data>
+  <data name="Recipes.New" xml:space="preserve">
+    <value>New recipe</value>
+  </data>
+  <data name="Recipes.SearchPlaceholder" xml:space="preserve">
+    <value>Name or tag</value>
+  </data>
+  <data name="Recipes.Empty" xml:space="preserve">
+    <value>No recipes yet.</value>
+  </data>
+  <data name="Recipes.Servings" xml:space="preserve">
+    <value>{0} servings</value>
+  </data>
+  <data name="Recipes.ServingsLabel" xml:space="preserve">
+    <value>Servings</value>
+  </data>
+  <data name="Recipes.IngredientCount" xml:space="preserve">
+    <value>{0} ingredients</value>
+  </data>
+  <data name="Recipes.Minutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="Recipes.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Recipes.PrepMinutes" xml:space="preserve">
+    <value>Prep (min)</value>
+  </data>
+  <data name="Recipes.CookMinutes" xml:space="preserve">
+    <value>Cooking (min)</value>
+  </data>
+  <data name="Recipes.SourceUrl" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Recipes.Tags" xml:space="preserve">
+    <value>Tags</value>
+  </data>
+  <data name="Recipes.TagsHint" xml:space="preserve">
+    <value>Separate with commas.</value>
+  </data>
+  <data name="Recipes.Instructions" xml:space="preserve">
+    <value>Instructions</value>
+  </data>
+  <data name="Recipes.Ingredients" xml:space="preserve">
+    <value>Ingredients</value>
+  </data>
+  <data name="Recipes.IngredientsHint" xml:space="preserve">
+    <value>Quantities refer to {0} servings.</value>
+  </data>
+  <data name="Recipes.Ingredient" xml:space="preserve">
+    <value>Ingredient</value>
+  </data>
+  <data name="Recipes.IngredientHint" xml:space="preserve">
+    <value>Pick a product or type it in.</value>
+  </data>
+  <data name="Recipes.Quantity" xml:space="preserve">
+    <value>Quantity ({0})</value>
+  </data>
+  <data name="Recipes.NoQuantity" xml:space="preserve">
+    <value>no quantity — not deducted</value>
+  </data>
+  <data name="Recipes.Optional" xml:space="preserve">
+    <value>optional</value>
+  </data>
+  <data name="Recipes.AddIngredient" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Recipes.RemoveIngredient" xml:space="preserve">
+    <value>Remove ingredient</value>
+  </data>
+  <data name="Recipes.CookNow" xml:space="preserve">
+    <value>Cook now</value>
+  </data>
+  <data name="Recipes.NameRequired" xml:space="preserve">
+    <value>A name is required.</value>
+  </data>
+  <data name="Recipes.ServingsRequired" xml:space="preserve">
+    <value>Servings must be greater than 0.</value>
+  </data>
+  <data name="MealSlot.Breakfast" xml:space="preserve">
+    <value>Breakfast</value>
+  </data>
+  <data name="MealSlot.Lunch" xml:space="preserve">
+    <value>Lunch</value>
+  </data>
+  <data name="MealSlot.Dinner" xml:space="preserve">
+    <value>Dinner</value>
+  </data>
+  <data name="MealSlot.Snack" xml:space="preserve">
+    <value>Snack</value>
+  </data>
+  <data name="Plan.Title" xml:space="preserve">
+    <value>Meal plan</value>
+  </data>
+  <data name="Plan.PreviousWeek" xml:space="preserve">
+    <value>Previous week</value>
+  </data>
+  <data name="Plan.NextWeek" xml:space="preserve">
+    <value>Next week</value>
+  </data>
+  <data name="Plan.Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Plan.Meal" xml:space="preserve">
+    <value>Meal</value>
+  </data>
+  <data name="Plan.MealHint" xml:space="preserve">
+    <value>Pick a recipe or type it in, e.g. "leftovers".</value>
+  </data>
+  <data name="Plan.Day" xml:space="preserve">
+    <value>Day</value>
+  </data>
+  <data name="Plan.Slot" xml:space="preserve">
+    <value>Meal</value>
+  </data>
+  <data name="Plan.Servings" xml:space="preserve">
+    <value>Servings</value>
+  </data>
+  <data name="Plan.Add" xml:space="preserve">
+    <value>Plan it</value>
+  </data>
+  <data name="Plan.NothingPlanned" xml:space="preserve">
+    <value>Nothing planned.</value>
+  </data>
+  <data name="Plan.Cooked" xml:space="preserve">
+    <value>cooked</value>
+  </data>
+  <data name="Plan.Skipped" xml:space="preserve">
+    <value>skipped</value>
+  </data>
+  <data name="Plan.Cook" xml:space="preserve">
+    <value>Cook</value>
+  </data>
+  <data name="Plan.Skip" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="Plan.Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Plan.Cost" xml:space="preserve">
+    <value>cost {0}</value>
+  </data>
+  <data name="Plan.CookHint" xml:space="preserve">
+    <value>Deduction for {0} servings — check and adjust.</value>
+  </data>
+  <data name="Plan.Available" xml:space="preserve">
+    <value>in stock {0}</value>
+  </data>
+  <data name="Plan.Untracked" xml:space="preserve">
+    <value>Not stock-tracked: {0}</value>
+  </data>
+  <data name="Plan.ConfirmCook" xml:space="preserve">
+    <value>Deduct and mark as cooked</value>
+  </data>
+  <data name="Plan.PartiallyBooked" xml:space="preserve">
+    <value>Not everything was in stock: {0}</value>
+  </data>
+  <data name="Plan.Needs" xml:space="preserve">
+    <value>What this week needs</value>
+  </data>
+  <data name="Plan.Needed" xml:space="preserve">
+    <value>needed {0}</value>
+  </data>
+  <data name="Plan.UntrackedNeed" xml:space="preserve">
+    <value>no quantity — just a reminder</value>
+  </data>
+  <data name="Plan.Covered" xml:space="preserve">
+    <value>covered</value>
+  </data>
+  <data name="Plan.ToShoppingList" xml:space="preserve">
+    <value>Put what is missing on the list</value>
+  </data>
+  <data name="Plan.ListUpdated" xml:space="preserve">
+    <value>{0} items on the list.</value>
+  </data>
+  <data name="Plan.NoNeeds" xml:space="preserve">
+    <value>Nothing needed — either nothing planned or everything is there.</value>
   </data>
   <data name="Unit.Kilogram.Abbreviation" xml:space="preserve">
     <value>kg</value>

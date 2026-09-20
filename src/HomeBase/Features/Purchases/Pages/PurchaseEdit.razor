@@ -1,0 +1,229 @@
+@page "/purchases/new"
+@inject PurchaseService Purchases
+@inject CatalogService Catalog
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Purchases.New"]</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Localizer["Purchases.New"]</MudText>
+
+<MudPaper Outlined="true" Class="pa-4 mb-4">
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="5">
+            <MudAutocomplete T="string"
+                             @bind-Value="_draft.StoreName"
+                             SearchFunc="SearchStoresAsync"
+                             CoerceValue="true"
+                             Clearable="true"
+                             Variant="Variant.Outlined"
+                             Label="@Localizer["Purchases.Store"]"
+                             HelperText="@Localizer["Purchases.StoreHint"]"/>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker @bind-Date="PurchasedDate"
+                           Label="@Localizer["Purchases.PurchasedAt"]"
+                           Variant="Variant.Outlined"
+                           Editable="true"/>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudTextField @bind-Value="_draft.PaymentMethod"
+                          Label="@Localizer["Purchases.PaymentMethod"]"
+                          Variant="Variant.Outlined"/>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Outlined="true" Class="pa-4 mb-4">
+    <MudText Typo="Typo.h6" Class="mb-3">@Localizer["Purchases.AddLine"]</MudText>
+
+    <MudChipSet T="PurchaseLineType"
+                SelectionMode="SelectionMode.SingleSelection"
+                SelectedValue="_line.LineType"
+                SelectedValueChanged="SetLineType"
+                CheckMark="true"
+                Class="mb-3">
+        @foreach (var type in LineTypes)
+        {
+            <MudChip T="PurchaseLineType" Value="@type" Color="Color.Primary" Variant="Variant.Outlined">
+                @Localizer[$"LineType.{type}"]
+            </MudChip>
+        }
+    </MudChipSet>
+
+    <MudGrid Spacing="3">
+        @if (_line.IsItem)
+        {
+            <MudItem xs="12" sm="6">
+                <MudAutocomplete T="ProductRow"
+                                 Value="_picked"
+                                 ValueChanged="PickProduct"
+                                 SearchFunc="SearchProductsAsync"
+                                 ToStringFunc="@(row => row?.Name ?? string.Empty)"
+                                 CoerceText="false"
+                                 Clearable="true"
+                                 ResetValueOnEmptyText="true"
+                                 Variant="Variant.Outlined"
+                                 Label="@Localizer["Purchases.Product"]"/>
+            </MudItem>
+            <MudItem xs="6" sm="2">
+                <MudNumericField Value="_line.Quantity"
+                                 ValueChanged="OnQuantityChanged"
+                                 T="decimal"
+                                 Label="@Localizer["Purchases.Quantity"]"
+                                 Variant="Variant.Outlined"
+                                 Min="0"/>
+            </MudItem>
+            <MudItem xs="6" sm="2">
+                <MudNumericField @bind-Value="QuantityBase"
+                                 Label="@Localizer["Purchases.QuantityBase", _picked is null ? string.Empty : Units.Abbreviation(_picked.BaseUnit)]"
+                                 Variant="Variant.Outlined"
+                                 Min="0"/>
+            </MudItem>
+            <MudItem xs="6" sm="2">
+                <MudNumericField @bind-Value="_line.LineTotal"
+                                 Label="@Localizer["Purchases.LineTotal"]"
+                                 Variant="Variant.Outlined"
+                                 Format="N2"/>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="BestBeforeDate"
+                               Label="@Localizer["BookIn.BestBefore"]"
+                               Variant="Variant.Outlined"
+                               Editable="true"
+                               Clearable="true"/>
+            </MudItem>
+            <MudItem xs="12" sm="6" Class="d-flex align-center">
+                <MudSwitch @bind-Value="_line.IsPromo" Color="Color.Warning">
+                    @Localizer["Purchases.IsPromo"]
+                </MudSwitch>
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_line.RawText"
+                              Label="@Localizer["Purchases.LineText"]"
+                              Variant="Variant.Outlined"/>
+            </MudItem>
+            <MudItem xs="6" sm="3">
+                <MudNumericField @bind-Value="_line.LineTotal"
+                                 Label="@Localizer[_line.IsCredit ? "Purchases.Credit" : "Purchases.LineTotal"]"
+                                 Variant="Variant.Outlined"
+                                 Format="N2"
+                                 Min="0"/>
+            </MudItem>
+            @if (_line.LineType == PurchaseLineType.Discount && ItemLineIndexes.Count > 0)
+            {
+                <MudItem xs="12" sm="3">
+                    <MudSelect @bind-Value="_line.ParentIndex"
+                               Label="@Localizer["Purchases.BelongsTo"]"
+                               Variant="Variant.Outlined"
+                               Clearable="true">
+                        @foreach (var index in ItemLineIndexes)
+                        {
+                            <MudSelectItem T="int?" Value="@index">
+                                @_draft.Lines[index].Label
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            }
+        }
+    </MudGrid>
+
+    <MudButton Variant="Variant.Outlined"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               Class="mt-3"
+               OnClick="@AddLine">
+        @Localizer["Purchases.AddLine"]
+    </MudButton>
+
+    @if (_lineError is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-3">@_lineError</MudAlert>
+    }
+</MudPaper>
+
+@if (_draft.Lines.Count > 0)
+{
+    <MudPaper Outlined="true" Class="mb-4">
+        @foreach (var line in _draft.Lines)
+        {
+            <div class="d-flex align-center gap-2 pa-3">
+                <div class="flex-grow-1">
+                    <MudText Typo="Typo.body1">
+                        <b>@line.Label</b>
+                        @if (!line.IsItem)
+                        {
+                            <MudChip T="string" Size="Size.Small" Class="ml-2" Variant="Variant.Text">
+                                @Localizer[$"LineType.{line.LineType}"]
+                            </MudChip>
+                        }
+                        @if (line.IsPromo)
+                        {
+                            <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Warning" Variant="Variant.Text">
+                                @Localizer["Purchases.PromoBadge"]
+                            </MudChip>
+                        }
+                    </MudText>
+                    <MudText Typo="Typo.caption">@DescribeLine(line)</MudText>
+                </div>
+                <MudText Typo="Typo.body1" Class="flex-none">
+                    <b>@Units.Money(line.SignedTotal)</b>
+                </MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                               Color="Color.Default"
+                               title="@Localizer["Purchases.RemoveLine"]"
+                               OnClick="@(() => RemoveLine(line))"/>
+            </div>
+            <MudDivider/>
+        }
+
+        <div class="d-flex justify-space-between align-center pa-3">
+            <MudText Typo="Typo.h6">@Localizer["Purchases.LineSum"]</MudText>
+            <MudText Typo="Typo.h6">@Units.Money(_draft.LineSum)</MudText>
+        </div>
+    </MudPaper>
+}
+
+<MudPaper Outlined="true" Class="pa-4">
+    <MudGrid Spacing="3" Class="align-center">
+        <MudItem xs="12" sm="4">
+            <MudNumericField @bind-Value="_draft.ReceiptTotal"
+                             T="decimal?"
+                             Label="@Localizer["Purchases.ReceiptTotal"]"
+                             HelperText="@Localizer["Purchases.ReceiptTotalHint"]"
+                             Variant="Variant.Outlined"
+                             Clearable="true"
+                             Format="N2"/>
+        </MudItem>
+        <MudItem xs="12" sm="8" Class="d-flex align-center">
+            <MudSwitch @bind-Value="_draft.BookIntoStock" Color="Color.Primary">
+                @Localizer["Purchases.BookIntoStock"]
+            </MudSwitch>
+        </MudItem>
+    </MudGrid>
+
+    @if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-3">@_error</MudAlert>
+    }
+
+    <div class="d-flex flex-wrap gap-3 mt-4">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   Disabled="_busy"
+                   OnClick="@SaveAsync">
+            @Localizer["Common.Save"]
+        </MudButton>
+        <MudButton Href="/purchases"
+                   Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   Size="Size.Large">
+            @Localizer["Common.Cancel"]
+        </MudButton>
+    </div>
+</MudPaper>

@@ -1,0 +1,70 @@
+@page "/purchases"
+@inject PurchaseService Purchases
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Purchases.Title"]</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">@Localizer["Purchases.Title"]</MudText>
+    <MudButton Href="/purchases/new"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.ReceiptLong">
+        @Localizer["Purchases.New"]
+    </MudButton>
+</div>
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else if (_rows.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["Purchases.Empty"]</MudAlert>
+}
+else
+{
+    <MudPaper Outlined="true">
+        <MudList T="string">
+            @foreach (var row in _rows)
+            {
+                <MudListItem T="string"
+                             Href="@(row.Status == PurchaseStatus.Confirmed
+                                       ? $"/purchases/{row.Id}"
+                                       : $"/purchases/{row.Id}/review")">
+                    <div class="d-flex justify-space-between align-start gap-3">
+                        <div>
+                            <MudText Typo="Typo.body1">
+                                <b>@(row.StoreName ?? Localizer["Purchases.NoStore"].Value)</b>
+                                @if (row.Status != PurchaseStatus.Confirmed)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Warning" Variant="Variant.Text">
+                                        @Localizer["Purchases.ReviewBadge"]
+                                    </MudChip>
+                                }
+                            </MudText>
+                            <MudText Typo="Typo.caption">
+                                <span>@row.PurchasedAt.LocalDateTime.ToString("d")</span>
+                                <span> · @Localizer["Purchases.LineCount", row.LineCount]</span>
+                                @if (row.Source != PurchaseSource.Manual)
+                                {
+                                    <span> · @row.Source</span>
+                                }
+                            </MudText>
+                        </div>
+                        <MudText Typo="Typo.h6" Class="flex-none">
+                            @(row.Total is { } total ? Units.Money(total) : "—")
+                        </MudText>
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}
+
+@code {
+    private IReadOnlyList<PurchaseRow>? _rows;
+
+    protected override async Task OnInitializedAsync() => _rows = await Purchases.GetPurchasesAsync();
+}

@@ -1,0 +1,276 @@
+@page "/plan"
+@inject MealPlanService Plan
+@inject RecipeService Recipes
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Plan.Title"]</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">@Localizer["Plan.Title"]</MudText>
+    <div class="d-flex align-center gap-2">
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                       title="@Localizer["Plan.PreviousWeek"]"
+                       OnClick="@(() => ShiftWeekAsync(-7))"/>
+        <MudText Typo="Typo.body1">@WeekLabel</MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                       title="@Localizer["Plan.NextWeek"]"
+                       OnClick="@(() => ShiftWeekAsync(7))"/>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => GoToTodayAsync())">
+            @Localizer["Plan.Today"]
+        </MudButton>
+    </div>
+</div>
+
+<MudPaper Outlined="true" Class="pa-4 mb-4">
+    <MudGrid Spacing="3" Class="align-center">
+        <MudItem xs="12" sm="4">
+            <MudAutocomplete T="RecipeRow"
+                             Value="_picked"
+                             ValueChanged="PickRecipe"
+                             Text="@_entryText"
+                             TextChanged="@(text => _entryText = text)"
+                             SearchFunc="SearchRecipesAsync"
+                             ToStringFunc="@(row => row?.Name ?? string.Empty)"
+                             CoerceText="false"
+                             Clearable="true"
+                             ResetValueOnEmptyText="true"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Label="@Localizer["Plan.Meal"]"
+                             HelperText="@Localizer["Plan.MealHint"]"/>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudDatePicker @bind-Date="_newDate"
+                           Label="@Localizer["Plan.Day"]"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Editable="true"/>
+        </MudItem>
+        <MudItem xs="6" sm="2">
+            <MudSelect @bind-Value="_newSlot"
+                       Label="@Localizer["Plan.Slot"]"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense">
+                @foreach (var slot in Slots)
+                {
+                    <MudSelectItem T="MealSlot" Value="@slot">@Localizer[$"MealSlot.{slot}"]</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" sm="1">
+            <MudNumericField @bind-Value="_newServings"
+                             Label="@Localizer["Plan.Servings"]"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="1"/>
+        </MudItem>
+        <MudItem xs="6" sm="2">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Disabled="_busy"
+                       OnClick="@AddEntryAsync">
+                @Localizer["Plan.Add"]
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_entries is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    @foreach (var day in Days)
+    {
+        var entries = _entries.Where(e => e.PlanDate == day).ToList();
+
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">@DayLabel(day)</MudText>
+
+        <MudPaper Outlined="true">
+            @if (entries.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="pa-3">@Localizer["Plan.NothingPlanned"]</MudText>
+            }
+            else
+            {
+                @foreach (var entry in entries)
+                {
+                    <div class="pa-3">
+                        <div class="d-flex justify-space-between align-start flex-wrap gap-2">
+                            <div>
+                                <MudText Typo="Typo.body1">
+                                    <b>@entry.Label</b>
+                                    @if (entry.IsCooked)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Success" Variant="Variant.Text">
+                                            @Localizer["Plan.Cooked"]
+                                        </MudChip>
+                                    }
+                                    else if (entry.Status == MealPlanStatus.Skipped)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Class="ml-2" Variant="Variant.Text">
+                                            @Localizer["Plan.Skipped"]
+                                        </MudChip>
+                                    }
+                                </MudText>
+                                <MudText Typo="Typo.caption">
+                                    @Localizer[$"MealSlot.{entry.Slot}"]
+                                    · @Localizer["Recipes.Servings", entry.Servings]
+                                    @if (_costs.TryGetValue(entry.Id, out var cost) && cost > 0)
+                                    {
+                                        <span> · @Localizer["Plan.Cost", Units.Money(cost)]</span>
+                                    }
+                                </MudText>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                @if (entry.IsPlanned && entry.RecipeId is not null)
+                                {
+                                    <MudButton Size="Size.Small"
+                                               Variant="Variant.Filled"
+                                               Color="Color.Primary"
+                                               Disabled="_busy"
+                                               OnClick="@(() => BeginCookAsync(entry))">
+                                        @Localizer["Plan.Cook"]
+                                    </MudButton>
+                                }
+                                @if (entry.IsPlanned)
+                                {
+                                    <MudButton Size="Size.Small"
+                                               Variant="Variant.Outlined"
+                                               Color="Color.Default"
+                                               Disabled="_busy"
+                                               OnClick="@(() => SkipAsync(entry))">
+                                        @Localizer["Plan.Skip"]
+                                    </MudButton>
+                                }
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Color="Color.Default"
+                                               title="@Localizer["Plan.Remove"]"
+                                               OnClick="@(() => RemoveAsync(entry))"/>
+                            </div>
+                        </div>
+
+                        @if (_cookEntryId == entry.Id && _cookPlan is not null)
+                        {
+                            <MudDivider Class="my-3"/>
+
+                            <MudText Typo="Typo.body2" Class="mb-2">
+                                @Localizer["Plan.CookHint", _cookPlan.Servings]
+                            </MudText>
+
+                            @foreach (var line in _cookLines)
+                            {
+                                <div class="d-flex flex-wrap align-center gap-3 mb-2">
+                                    <MudCheckBox @bind-Value="line.Include" Color="Color.Primary" Dense="true"/>
+                                    <div style="min-width: 12rem">
+                                        <MudText Typo="Typo.body2">@line.Line.Name</MudText>
+                                        <MudText Typo="Typo.caption"
+                                                 Color="@(line.Line.IsCovered ? Color.Default : Color.Warning)">
+                                            @Localizer["Plan.Available", Units.Format(line.Line.Available, line.Line.BaseUnit)]
+                                            @if (line.Line.IsOptional)
+                                            {
+                                                <span> · @Localizer["Recipes.Optional"]</span>
+                                            }
+                                        </MudText>
+                                    </div>
+                                    <MudNumericField @bind-Value="line.Quantity"
+                                                     T="decimal"
+                                                     Label="@Units.Abbreviation(line.Line.BaseUnit)"
+                                                     Variant="Variant.Outlined"
+                                                     Margin="Margin.Dense"
+                                                     Min="0"
+                                                     Style="max-width: 10rem"/>
+                                </div>
+                            }
+
+                            @if (_cookPlan.Untracked.Count > 0)
+                            {
+                                <MudText Typo="Typo.caption" Class="d-block mb-2">
+                                    @Localizer["Plan.Untracked", string.Join(", ", _cookPlan.Untracked)]
+                                </MudText>
+                            }
+
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           Disabled="_busy"
+                                           OnClick="@ConfirmCookAsync">
+                                    @Localizer["Plan.ConfirmCook"]
+                                </MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@CancelCook">
+                                    @Localizer["Common.Cancel"]
+                                </MudButton>
+                            </div>
+
+                            @if (_cookMessage is not null)
+                            {
+                                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-3">
+                                    @_cookMessage
+                                </MudAlert>
+                            }
+                        }
+                    </div>
+                    <MudDivider/>
+                }
+            }
+        </MudPaper>
+    }
+
+    <MudText Typo="Typo.h5" Class="mt-8 mb-2">@Localizer["Plan.Needs"]</MudText>
+
+    @if (_needs is { Count: > 0 })
+    {
+        <MudPaper Outlined="true" Class="mb-4">
+            @foreach (var need in _needs)
+            {
+                <div class="d-flex justify-space-between align-start gap-3 pa-3">
+                    <div>
+                        <MudText Typo="Typo.body1">@need.Label</MudText>
+                        <MudText Typo="Typo.caption">
+                            @if (need.BaseUnit is { } unit)
+                            {
+                                <span>@Localizer["Plan.Needed", Units.Format(need.Needed, unit)]</span>
+                                <span> · @Localizer["BookIn.CurrentStock", Units.Format(need.Stock, unit)]</span>
+                            }
+                            else
+                            {
+                                <span>@Localizer["Plan.UntrackedNeed"]</span>
+                            }
+                        </MudText>
+                    </div>
+                    <MudText Typo="Typo.body1"
+                             Class="flex-none"
+                             Color="@(need.Missing > 0 ? Color.Warning : Color.Success)">
+                        <b>
+                            @(need.BaseUnit is { } unit2 && need.Missing > 0
+                                ? Units.Format(need.Missing, unit2)
+                                : need.IsCovered ? Localizer["Plan.Covered"].Value : string.Empty)
+                        </b>
+                    </MudText>
+                </div>
+                <MudDivider/>
+            }
+        </MudPaper>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   Disabled="_busy"
+                   StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                   OnClick="@ApplyToListAsync">
+            @Localizer["Plan.ToShoppingList"]
+        </MudButton>
+
+        @if (_listMessage is not null)
+        {
+            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Class="mt-3">@_listMessage</MudAlert>
+        }
+    }
+    else
+    {
+        <MudText Typo="Typo.body2">@Localizer["Plan.NoNeeds"]</MudText>
+    }
+}

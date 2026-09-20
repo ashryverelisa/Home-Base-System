@@ -101,6 +101,26 @@ dotnet run --project HomeBase
 The app then listens on `http://localhost:5243` and `https://localhost:7229`
 (see [`launchSettings.json`](src/HomeBase/Properties/launchSettings.json)).
 
+### Ingest API key
+
+The `/api/v1` endpoints are rejected with `401` unless the caller sends the configured key in
+an `X-Api-Key` header, and answer `503` while no key is configured at all. Supply it through
+the environment rather than a checked-in file:
+
+```bash
+Ingest__ApiKey=<a long random string>
+```
+
+### Asset documents
+
+Invoices, manuals and photos attached to an asset are stored on disk, not in the database.
+They land under `App_Data/assets/<assetId>/` beneath the content root unless another directory
+is configured:
+
+```bash
+Assets__DocumentPath=/srv/homebase/documents
+```
+
 ### Migrations
 
 The design-time factory reads the connection string from the `HOMEBASE_DB` environment
@@ -130,6 +150,7 @@ constant time, plus rate limiting.
 | `POST` | `/api/v1/shopping-lists/{id}/items` | "Add milk to the list" from Telegram |
 | `GET`  | `/api/v1/stock/low` | Below minimum stock |
 | `GET`  | `/api/v1/stock/expiring?days=3` | Expiring soon |
+| `POST` | `/api/v1/recipes` | Import a recipe (ingredient lines run through the same matching pipeline) |
 
 The last two are poll targets for a cron workflow in n8n. That keeps notification logic
 where it belongs and keeps this software lean.

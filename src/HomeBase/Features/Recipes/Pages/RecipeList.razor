@@ -1,0 +1,87 @@
+@page "/recipes"
+@inject RecipeService Recipes
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["Recipes.Title"]</PageTitle>
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-4">
+    <MudText Typo="Typo.h4" HtmlTag="h1">@Localizer["Recipes.Title"]</MudText>
+    <MudButton Href="/recipes/new"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.Add">
+        @Localizer["Recipes.New"]
+    </MudButton>
+</div>
+
+<MudTextField T="string"
+              Value="_term"
+              ValueChanged="SearchAsync"
+              Immediate="true"
+              DebounceInterval="200"
+              Clearable="true"
+              Variant="Variant.Outlined"
+              Placeholder="@Localizer["Recipes.SearchPlaceholder"]"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              Class="mb-4"/>
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else if (_rows.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["Recipes.Empty"]</MudAlert>
+}
+else
+{
+    <MudPaper Outlined="true">
+        <MudList T="string">
+            @foreach (var row in _rows)
+            {
+                <MudListItem T="string" Href="@($"/recipes/{row.Id}")">
+                    <div class="d-flex justify-space-between align-start gap-3">
+                        <div>
+                            <MudText Typo="Typo.body1"><b>@row.Name</b></MudText>
+                            <MudText Typo="Typo.caption">
+                                <span>@Localizer["Recipes.Servings", row.Servings]</span>
+                                <span> · @Localizer["Recipes.IngredientCount", row.IngredientCount]</span>
+                                @if (row.TotalMinutes is { } minutes)
+                                {
+                                    <span> · @Localizer["Recipes.Minutes", minutes]</span>
+                                }
+                            </MudText>
+                        </div>
+                        @if (row.Tags.Count > 0)
+                        {
+                            <div class="d-flex flex-wrap gap-1 flex-none">
+                                @foreach (var tag in row.Tags)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text">@tag</MudChip>
+                                }
+                            </div>
+                        }
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}
+
+@code {
+    private IReadOnlyList<RecipeRow>? _rows;
+    private string _term = string.Empty;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private Task SearchAsync(string? value)
+    {
+        _term = value ?? string.Empty;
+
+        return LoadAsync();
+    }
+
+    private async Task LoadAsync() => _rows = await Recipes.SearchAsync(_term);
+}

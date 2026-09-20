@@ -1,5 +1,6 @@
 @page "/"
 @inject InventoryService Inventory
+@inject ShoppingService Shopping
 @inject IStringLocalizer<AppStrings> Localizer
 
 <PageTitle>@Localizer["Home.Title"]</PageTitle>
@@ -13,13 +14,13 @@
 else
 {
     <MudGrid Spacing="3" Class="mb-6">
-        <MudItem xs="6" md="4">
+        <MudItem xs="6" md="3">
             <MudPaper Class="pa-4" Outlined="true">
                 <MudText Typo="Typo.h4">@_total</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Default">@Localizer["Home.LotsInStock"]</MudText>
             </MudPaper>
         </MudItem>
-        <MudItem xs="6" md="4">
+        <MudItem xs="6" md="3">
             <MudPaper Class="pa-4" Outlined="true">
                 <MudText Typo="Typo.h4" Color="@(_expiring.Count > 0 ? Color.Warning : Color.Inherit)">
                     @_expiring.Count
@@ -27,12 +28,18 @@ else
                 <MudText Typo="Typo.body2">@Localizer["Home.ExpiringSoon"]</MudText>
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" md="4">
+        <MudItem xs="6" md="3">
             <MudPaper Class="pa-4" Outlined="true">
                 <MudText Typo="Typo.h4" Color="@(_expired > 0 ? Color.Error : Color.Inherit)">
                     @_expired
                 </MudText>
                 <MudText Typo="Typo.body2">@Localizer["Home.AlreadyExpired"]</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h4">@_openItems</MudText>
+                <MudText Typo="Typo.body2">@Localizer["Home.OpenShoppingItems"]</MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -78,6 +85,20 @@ else
                    StartIcon="@Icons.Material.Filled.Inventory2">
             @Localizer["Stock.Title"]
         </MudButton>
+        <MudButton Href="/shopping"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.ShoppingCart">
+            @Localizer["Shopping.Title"]
+        </MudButton>
+        <MudButton Href="/purchases/new"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.ReceiptLong">
+            @Localizer["Purchases.New"]
+        </MudButton>
         <MudButton Href="/products"
                    Variant="Variant.Outlined"
                    Color="Color.Default"
@@ -92,6 +113,7 @@ else
     private IReadOnlyList<StockLotView>? _expiring;
     private int _total;
     private int _expired;
+    private int _openItems;
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,5 +122,6 @@ else
         _total = all.Count;
         _expired = all.Count(l => l.IsExpired);
         _expiring = [.. all.Where(l => l.DaysLeft is <= 7)];
+        _openItems = (await Shopping.GetListsAsync()).Sum(l => l.OpenCount);
     }
 }

@@ -1,0 +1,186 @@
+@page "/recipes/new"
+@page "/recipes/{Id:int}"
+@inject RecipeService Recipes
+@inject CatalogService Catalog
+@inject MealPlanService Plan
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Title</PageTitle>
+
+@if (_recipe is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Title</MudText>
+
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_recipe.Name"
+                              Label="@Localizer["Recipes.Name"]"
+                              Variant="Variant.Outlined"
+                              Required="true"/>
+            </MudItem>
+            <MudItem xs="4" sm="2">
+                <MudNumericField @bind-Value="_recipe.Servings"
+                                 Label="@Localizer["Recipes.ServingsLabel"]"
+                                 Variant="Variant.Outlined"
+                                 Min="1"/>
+            </MudItem>
+            <MudItem xs="4" sm="2">
+                <MudNumericField @bind-Value="_recipe.PrepMinutes"
+                                 T="int?"
+                                 Label="@Localizer["Recipes.PrepMinutes"]"
+                                 Variant="Variant.Outlined"
+                                 Min="0"/>
+            </MudItem>
+            <MudItem xs="4" sm="2">
+                <MudNumericField @bind-Value="_recipe.CookMinutes"
+                                 T="int?"
+                                 Label="@Localizer["Recipes.CookMinutes"]"
+                                 Variant="Variant.Outlined"
+                                 Min="0"/>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_recipe.SourceUrl"
+                              Label="@Localizer["Recipes.SourceUrl"]"
+                              Variant="Variant.Outlined"/>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_tagInput"
+                              Label="@Localizer["Recipes.Tags"]"
+                              HelperText="@Localizer["Recipes.TagsHint"]"
+                              Variant="Variant.Outlined"/>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_recipe.Instructions"
+                              Label="@Localizer["Recipes.Instructions"]"
+                              Variant="Variant.Outlined"
+                              Lines="6"/>
+            </MudItem>
+        </MudGrid>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4">@_error</MudAlert>
+        }
+
+        <div class="d-flex flex-wrap gap-3 mt-4">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Disabled="_busy"
+                       OnClick="@SaveAsync">
+                @Localizer["Common.Save"]
+            </MudButton>
+            @if (Id > 0)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           Disabled="_busy"
+                           StartIcon="@Icons.Material.Filled.Restaurant"
+                           OnClick="@CookNowAsync">
+                    @Localizer["Recipes.CookNow"]
+                </MudButton>
+            }
+            <MudButton Href="/recipes"
+                       Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Large">
+                @Localizer["Common.Cancel"]
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    @if (Id > 0)
+    {
+        <MudPaper Outlined="true" Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-1">@Localizer["Recipes.Ingredients"]</MudText>
+            <MudText Typo="Typo.caption" Class="d-block mb-3">
+                @Localizer["Recipes.IngredientsHint", _recipe.Servings]
+            </MudText>
+
+            @if (_ingredients.Count > 0)
+            {
+                <MudPaper Outlined="true" Class="mb-4">
+                    @foreach (var ingredient in _ingredients)
+                    {
+                        <div class="d-flex justify-space-between align-center gap-3 pa-3">
+                            <div>
+                                <MudText Typo="Typo.body1">
+                                    @ingredient.Label
+                                    @if (ingredient.IsOptional)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Class="ml-2" Variant="Variant.Text">
+                                            @Localizer["Recipes.Optional"]
+                                        </MudChip>
+                                    }
+                                </MudText>
+                                <MudText Typo="Typo.caption">
+                                    @(ingredient.QuantityBase is { } quantity && ingredient.BaseUnit is { } unit
+                                        ? Units.Format(quantity, unit)
+                                        : Localizer["Recipes.NoQuantity"].Value)
+                                    @if (!string.IsNullOrWhiteSpace(ingredient.Note))
+                                    {
+                                        <span> · @ingredient.Note</span>
+                                    }
+                                </MudText>
+                            </div>
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                           Color="Color.Default"
+                                           title="@Localizer["Recipes.RemoveIngredient"]"
+                                           OnClick="@(() => RemoveIngredientAsync(ingredient))"/>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+            }
+
+            <MudGrid Spacing="3" Class="align-center">
+                <MudItem xs="12" sm="5">
+                    <MudAutocomplete T="ProductRow"
+                                     Value="_picked"
+                                     ValueChanged="PickProduct"
+                                     Text="@_ingredientText"
+                                     TextChanged="@(text => _ingredientText = text)"
+                                     SearchFunc="SearchProductsAsync"
+                                     ToStringFunc="@(row => row?.Name ?? string.Empty)"
+                                     CoerceText="false"
+                                     Clearable="true"
+                                     ResetValueOnEmptyText="true"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Label="@Localizer["Recipes.Ingredient"]"
+                                     HelperText="@Localizer["Recipes.IngredientHint"]"/>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudNumericField @bind-Value="_quantity"
+                                     T="decimal?"
+                                     Label="@Localizer["Recipes.Quantity", _picked is null ? string.Empty : Units.Abbreviation(_picked.BaseUnit)]"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Min="0"/>
+                </MudItem>
+                <MudItem xs="6" sm="2" Class="d-flex align-center">
+                    <MudSwitch @bind-Value="_optional" Color="Color.Default">
+                        @Localizer["Recipes.Optional"]
+                    </MudSwitch>
+                </MudItem>
+                <MudItem xs="12" sm="2">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               OnClick="@AddIngredientAsync">
+                        @Localizer["Recipes.AddIngredient"]
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
+}

@@ -31,6 +31,38 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
         return await lots.FirstExpiredFirstOut().Select(StockLotView.Projection).ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<LowStockRow>> GetLowStockAsync(CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        var products = await db
+            .Products.WithMinimumStock()
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.BaseUnit,
+                Minimum = p.MinStockBase!.Value,
+            })
+            .ToListAsync(ct);
+
+        var totals = await db.StockLots.StockTotalsByProductAsync(ct);
+
+        return
+        [
+            .. products
+                .Select(p => new LowStockRow(
+                    p.Id,
+                    p.Name,
+                    p.BaseUnit,
+                    totals.GetValueOrDefault(p.Id),
+                    p.Minimum
+                ))
+                .Where(r => r.StockBase < r.MinStockBase)
+                .OrderBy(r => r.Name),
+        ];
+    }
+
     public async Task<long> BookInAsync(BookInRequest request, CancellationToken ct = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.QuantityBase);
