@@ -101,6 +101,29 @@ dotnet run --project HomeBase
 The app then listens on `http://localhost:5243` and `https://localhost:7229`
 (see [`launchSettings.json`](src/HomeBase/Properties/launchSettings.json)).
 
+### Docker image
+
+The [`Docker`](.github/workflows/docker-publish.yml) workflow builds `src/Dockerfile` for
+`linux/amd64` and `linux/arm64` and publishes it to `ghcr.io/ashryverelisa/home-base-system`:
+`latest` and `main` from the default branch, `1.2.3` / `1.2` from `v1.2.3` tags, plus a
+`sha-<commit>` tag for every build. Pull requests are built but not pushed.
+
+### Docker Compose
+
+[`compose.yaml`](compose.yaml) runs the app together with PostgreSQL 17. The secrets the app
+otherwise reads from `appsettings.json` (connection string and ingest API key) are set directly
+in the compose file. Replace the `change-me` placeholders before the first start; the database
+password appears twice and both occurrences must match.
+
+```bash
+docker compose up -d
+```
+
+The app is then reachable on `http://localhost:8080`.
+Database files and asset documents live in the `homebase-db` and `homebase-data` volumes.
+`docker compose pull` fetches the latest published image, and `docker compose build` builds
+it from the local sources instead.
+
 ### Ingest API key
 
 The `/api/v1` endpoints are rejected with `401` unless the caller sends the configured key in
