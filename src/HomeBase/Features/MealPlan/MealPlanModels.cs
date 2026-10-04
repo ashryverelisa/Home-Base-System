@@ -89,6 +89,30 @@ public sealed record CookPlan(
     public bool IsFullyCovered => Lines.All(l => l.IsCovered || l.IsOptional);
 }
 
+public sealed class CookSelection
+{
+    public required CookLine Line { get; init; }
+
+    public decimal Quantity { get; set; }
+
+    public bool Include { get; set; } = true;
+
+    public static CookSelection For(CookLine line) =>
+        new()
+        {
+            Line = line,
+            Quantity = line.Needed,
+            Include = !line.IsOptional || line.IsCovered,
+        };
+
+    public static List<CookLine> ToBook(IEnumerable<CookSelection> selections) =>
+        [
+            .. selections
+                .Where(s => s.Include && s.Quantity > 0)
+                .Select(s => s.Line with { Needed = s.Quantity }),
+        ];
+}
+
 public sealed record CookResult(bool Succeeded, IReadOnlyList<CookLine> Missing)
 {
     public static CookResult Ok() => new(true, []);

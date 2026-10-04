@@ -1,8 +1,8 @@
 @page "/recipes/new"
 @page "/recipes/{Id:int}"
-@inject RecipeService Recipes
-@inject CatalogService Catalog
-@inject MealPlanService Plan
+@inject IRecipeService Recipes
+@inject ICatalogService Catalog
+@inject IMealPlanService Plan
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 

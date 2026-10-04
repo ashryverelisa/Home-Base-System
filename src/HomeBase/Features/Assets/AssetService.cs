@@ -10,9 +10,9 @@ namespace HomeBase.Features.Assets;
 
 public sealed class AssetService(
     IDbContextFactory<HomeBaseDbContext> factory,
-    AssetDocumentStore documents,
+    IAssetDocumentStore documents,
     IStringLocalizer<AppStrings> localizer
-)
+) : IAssetService
 {
     public async Task<IReadOnlyList<AssetRow>> SearchAsync(
         AssetFilter? filter = null,

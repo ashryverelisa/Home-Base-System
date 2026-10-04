@@ -1,10 +1,10 @@
 using HomeBase.Database;
-using HomeBase.Database.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Analytics;
 
 public sealed class AnalyticsService(IDbContextFactory<HomeBaseDbContext> factory)
+    : IAnalyticsService
 {
     public async Task<IReadOnlyList<MonthlySpendRow>> GetMonthlySpendAsync(
         int months = 12,
@@ -152,7 +152,7 @@ public sealed class AnalyticsService(IDbContextFactory<HomeBaseDbContext> factor
         return CarryForward(observed);
     }
 
-    private static List<PriceTrendPoint> CarryForward(Dictionary<DateTimeOffset, decimal> observed)
+    internal static List<PriceTrendPoint> CarryForward(Dictionary<DateTimeOffset, decimal> observed)
     {
         if (observed.Count == 0)
         {

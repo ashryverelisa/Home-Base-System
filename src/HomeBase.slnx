@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="HomeBase.Database/HomeBase.Database.csproj" />
   <Project Path="HomeBase/HomeBase.csproj" />
+  <Project Path="HomeBase.Tests/HomeBase.Tests.csproj" />
 </Solution>

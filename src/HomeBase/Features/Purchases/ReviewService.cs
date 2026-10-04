@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Purchases;
 
-public sealed class ReviewService(IDbContextFactory<HomeBaseDbContext> factory)
+public sealed class ReviewService(IDbContextFactory<HomeBaseDbContext> factory) : IReviewService
 {
     public async Task<IReadOnlyList<ReviewLineRow>> GetLinesAsync(
         long purchaseId,

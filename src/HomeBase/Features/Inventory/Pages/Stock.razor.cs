@@ -101,11 +101,7 @@ public partial class Stock
         };
 
     private static Color BestBeforeColor(StockLotView lot) =>
-        lot.DaysLeft switch
-        {
-            null => Color.Default,
-            < 0 => Color.Error,
-            <= 3 => Color.Warning,
-            _ => Color.Default,
-        };
+        lot.IsExpired ? Color.Error
+        : lot.ExpiresSoon ? Color.Warning
+        : Color.Default;
 }

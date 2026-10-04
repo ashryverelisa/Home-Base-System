@@ -45,19 +45,19 @@ builder.Services.AddDbContextFactory<HomeBaseDbContext>(options =>
     options.UseNpgsql(connectionString)
 );
 
-builder.Services.AddSingleton<AssetDocumentStore>();
+builder.Services.AddSingleton<IAssetDocumentStore, AssetDocumentStore>();
 
-builder.Services.AddScoped<AssetService>();
-builder.Services.AddScoped<CatalogService>();
-builder.Services.AddScoped<InventoryService>();
-builder.Services.AddScoped<ShoppingService>();
-builder.Services.AddScoped<PurchaseService>();
-builder.Services.AddScoped<AnalyticsService>();
-builder.Services.AddScoped<ReviewService>();
-builder.Services.AddScoped<ReceiptIngestService>();
-builder.Services.AddScoped<RecipeService>();
-builder.Services.AddScoped<RecipeIngestService>();
-builder.Services.AddScoped<MealPlanService>();
+builder.Services.AddScoped<IAssetService, AssetService>();
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IShoppingService, ShoppingService>();
+builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IReceiptIngestService, ReceiptIngestService>();
+builder.Services.AddScoped<IRecipeService, RecipeService>();
+builder.Services.AddScoped<IRecipeIngestService, RecipeIngestService>();
+builder.Services.AddScoped<IMealPlanService, MealPlanService>();
 
 builder.Services.AddRateLimiter(options =>
 {

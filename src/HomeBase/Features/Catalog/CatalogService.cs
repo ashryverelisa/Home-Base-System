@@ -10,7 +10,7 @@ namespace HomeBase.Features.Catalog;
 public sealed class CatalogService(
     IDbContextFactory<HomeBaseDbContext> factory,
     IStringLocalizer<AppStrings> localizer
-)
+) : ICatalogService
 {
     public async Task<IReadOnlyList<ProductRow>> SearchAsync(
         string? term = null,

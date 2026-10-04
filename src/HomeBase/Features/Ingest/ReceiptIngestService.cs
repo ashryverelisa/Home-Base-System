@@ -15,7 +15,7 @@ public sealed record ReceiptIngestResult(
     bool WasKnown
 );
 
-public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> factory)
+public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> factory) : IReceiptIngestService
 {
     public async Task<ReceiptIngestResult?> IngestAsync(
         ReceiptRequest request,
@@ -199,7 +199,7 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
         return lines;
     }
 
-    private static PurchaseLineType ResolveLineType(ReceiptItem source, bool hasItemAbove) =>
+    internal static PurchaseLineType ResolveLineType(ReceiptItem source, bool hasItemAbove) =>
         source.LineType switch
         {
             { Length: > 0 } declared when Enum.TryParse<PurchaseLineType>(declared, true, out var parsed) =>

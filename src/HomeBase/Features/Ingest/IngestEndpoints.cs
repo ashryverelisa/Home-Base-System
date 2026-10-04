@@ -27,9 +27,9 @@ public static class IngestEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> PostReceiptAsync(
+    internal static async Task<IResult> PostReceiptAsync(
         ReceiptRequest request,
-        ReceiptIngestService ingest,
+        IReceiptIngestService ingest,
         HttpContext http,
         CancellationToken ct
     )
@@ -54,9 +54,9 @@ public static class IngestEndpoints
             : Results.Created($"/api/v1/receipts/{result.PurchaseId}", response);
     }
 
-    private static async Task<IResult> PostRecipeAsync(
+    internal static async Task<IResult> PostRecipeAsync(
         RecipeRequest request,
-        RecipeIngestService recipes,
+        IRecipeIngestService recipes,
         CancellationToken ct
     )
     {
@@ -79,9 +79,9 @@ public static class IngestEndpoints
             : Results.Created($"/recipes/{result.RecipeId}", response);
     }
 
-    private static async Task<IResult> GetReceiptsAsync(
+    internal static async Task<IResult> GetReceiptsAsync(
         string? status,
-        PurchaseService purchases,
+        IPurchaseService purchases,
         CancellationToken ct
     )
     {
@@ -116,9 +116,9 @@ public static class IngestEndpoints
         return Results.Ok(summaries);
     }
 
-    private static async Task<IResult> ConfirmReceiptAsync(
+    internal static async Task<IResult> ConfirmReceiptAsync(
         long id,
-        PurchaseService purchases,
+        IPurchaseService purchases,
         CancellationToken ct
     )
     {
@@ -141,10 +141,10 @@ public static class IngestEndpoints
         );
     }
 
-    private static async Task<IResult> GetProductsAsync(
+    internal static async Task<IResult> GetProductsAsync(
         string? q,
         string? gtin,
-        CatalogService catalog,
+        ICatalogService catalog,
         CancellationToken ct
     )
     {
@@ -184,10 +184,10 @@ public static class IngestEndpoints
         );
     }
 
-    private static async Task<IResult> PostShoppingItemAsync(
+    internal static async Task<IResult> PostShoppingItemAsync(
         int id,
         ShoppingItemRequest request,
-        ShoppingService shopping,
+        IShoppingService shopping,
         CancellationToken ct
     )
     {
@@ -223,8 +223,8 @@ public static class IngestEndpoints
             : Results.BadRequest(new { error = result.Error });
     }
 
-    private static async Task<IResult> GetLowStockAsync(
-        InventoryService inventory,
+    internal static async Task<IResult> GetLowStockAsync(
+        IInventoryService inventory,
         CancellationToken ct
     )
     {
@@ -241,8 +241,8 @@ public static class IngestEndpoints
         );
     }
 
-    private static async Task<IResult> GetExpiringAsync(
-        InventoryService inventory,
+    internal static async Task<IResult> GetExpiringAsync(
+        IInventoryService inventory,
         CancellationToken ct,
         int days = 3
     )

@@ -2,7 +2,6 @@ using HomeBase.Database;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
 using HomeBase.Features.Common;
-using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Ingest;
 
@@ -69,10 +68,18 @@ public static class ProductMatcher
 
         return best switch
         {
-            { Score: >= AutoThreshold } =>
-                new ProductMatch(best.ProductId, MatchStatus.Fuzzy, (float)best.Score, null),
-            { Score: >= SuggestThreshold } =>
-                new ProductMatch(null, MatchStatus.Unmatched, (float)best.Score, best.ProductId),
+            { Score: >= AutoThreshold } => new ProductMatch(
+                best.ProductId,
+                MatchStatus.Fuzzy,
+                (float)best.Score,
+                null
+            ),
+            { Score: >= SuggestThreshold } => new ProductMatch(
+                null,
+                MatchStatus.Unmatched,
+                (float)best.Score,
+                best.ProductId
+            ),
             _ => ProductMatch.None,
         };
     }

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.StaticFiles;
 
 namespace HomeBase.Features.Assets;
 
-public sealed class AssetDocumentStore
+public sealed class AssetDocumentStore : IAssetDocumentStore
 {
     public const string ConfigurationKey = "Assets:DocumentPath";
     public const long MaximumFileSize = 20L * 1024 * 1024;

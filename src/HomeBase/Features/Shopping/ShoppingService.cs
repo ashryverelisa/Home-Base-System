@@ -11,7 +11,7 @@ namespace HomeBase.Features.Shopping;
 public sealed class ShoppingService(
     IDbContextFactory<HomeBaseDbContext> factory,
     IStringLocalizer<AppStrings> localizer
-)
+) : IShoppingService
 {
     public async Task<IReadOnlyList<ShoppingListRow>> GetListsAsync(CancellationToken ct = default)
     {
@@ -271,7 +271,7 @@ public sealed class ShoppingService(
         return added;
     }
 
-    private static ShoppingList TargetList(
+    internal static ShoppingList TargetList(
         List<ShoppingList> lists,
         RestockCandidate candidate
     )
@@ -291,10 +291,10 @@ public sealed class ShoppingService(
             ?? lists[0];
     }
 
-    private static decimal WholePackages(decimal missing, decimal packageSize) =>
+    internal static decimal WholePackages(decimal missing, decimal packageSize) =>
         packageSize > 0 ? Math.Ceiling(missing / packageSize) * packageSize : missing;
 
-    private sealed record RestockCandidate(
+    internal sealed record RestockCandidate(
         int ProductId,
         decimal MinStockBase,
         decimal? TargetStockBase,

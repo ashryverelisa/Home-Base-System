@@ -39,7 +39,7 @@ public sealed partial class AutoRestockService(
         {
             await using var scope = scopeFactory.CreateAsyncScope();
 
-            var shopping = scope.ServiceProvider.GetRequiredService<ShoppingService>();
+            var shopping = scope.ServiceProvider.GetRequiredService<IShoppingService>();
             var added = await shopping.RunAutoRestockAsync(ct);
 
             if (added > 0)

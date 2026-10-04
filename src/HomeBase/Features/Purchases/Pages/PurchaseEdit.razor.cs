@@ -45,13 +45,6 @@ public sealed partial class PurchaseEdit
         set => _line.QuantityBase = value;
     }
 
-    private List<int> ItemLineIndexes =>
-        [
-            .. Enumerable
-                .Range(0, _draft.Lines.Count)
-                .Where(index => _draft.Lines[index].IsItem),
-        ];
-
     protected override async Task OnInitializedAsync() => _stores = await Purchases.GetStoresAsync();
 
     private Task<IEnumerable<string>> SearchStoresAsync(string? term, CancellationToken ct) =>
@@ -73,23 +66,12 @@ public sealed partial class PurchaseEdit
 
     private void SetLineType(PurchaseLineType type)
     {
-        _line.LineType = type;
+        _line.ChangeType(type);
         _lineError = null;
 
         if (type != PurchaseLineType.Item)
         {
             _picked = null;
-            _line.ProductId = null;
-            _line.ProductName = null;
-            _line.BaseUnit = null;
-            _line.QuantityBase = null;
-            _line.IsPromo = false;
-            _line.BestBefore = null;
-        }
-
-        if (type != PurchaseLineType.Discount)
-        {
-            _line.ParentIndex = null;
         }
     }
 
@@ -98,40 +80,17 @@ public sealed partial class PurchaseEdit
         _picked = row;
         _lineError = null;
 
-        _line.ProductId = row?.Id;
-        _line.ProductName = row?.Name;
-        _line.BaseUnit = row?.BaseUnit;
-        _line.Quantity = 1m;
-        _line.QuantityBase = row?.PackageSize;
+        _line.SelectProduct(row);
     }
 
-    private void OnQuantityChanged(decimal value)
-    {
-        _line.Quantity = value;
-
-        if (_picked is { } product)
-        {
-            _line.QuantityBase = value * product.PackageSize;
-        }
-    }
+    private void OnQuantityChanged(decimal value) =>
+        _line.ChangeQuantity(value, _picked?.PackageSize);
 
     private void AddLine()
     {
-        if (_line.IsItem && _line.ProductId is null)
+        if (_line.Validate() is { } error)
         {
-            _lineError = Localizer["Purchases.ProductRequired"];
-            return;
-        }
-
-        if (!_line.IsItem && string.IsNullOrWhiteSpace(_line.RawText))
-        {
-            _lineError = Localizer["Purchases.TextRequired"];
-            return;
-        }
-
-        if (_line.LineTotal == 0)
-        {
-            _lineError = Localizer["Purchases.AmountRequired"];
+            _lineError = Localizer[error];
             return;
         }
 
@@ -145,25 +104,7 @@ public sealed partial class PurchaseEdit
 
     private void RemoveLine(PurchaseDraftLine line)
     {
-        var index = _draft.Lines.IndexOf(line);
-
-        if (index < 0)
-        {
-            return;
-        }
-
-        _draft.Lines.RemoveAt(index);
-
-        foreach (var other in _draft.Lines)
-        {
-            other.ParentIndex = other.ParentIndex switch
-            {
-                { } parent when parent == index => null,
-                { } parent when parent > index => parent - 1,
-                var parent => parent,
-            };
-        }
-
+        _draft.RemoveLine(line);
         _error = null;
     }
 

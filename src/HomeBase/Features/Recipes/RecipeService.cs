@@ -10,7 +10,7 @@ namespace HomeBase.Features.Recipes;
 public sealed class RecipeService(
     IDbContextFactory<HomeBaseDbContext> factory,
     IStringLocalizer<AppStrings> localizer
-)
+) : IRecipeService
 {
     public async Task<IReadOnlyList<RecipeRow>> SearchAsync(
         string? term = null,

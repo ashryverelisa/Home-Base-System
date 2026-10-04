@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.MealPlan;
 
-public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory)
+public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory) : IMealPlanService
 {
     public async Task<IReadOnlyList<MealPlanRow>> GetRangeAsync(
         DateOnly from,

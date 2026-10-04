@@ -32,7 +32,7 @@ public sealed partial class RecipeEdit
             return;
         }
 
-        _tagInput = string.Join(", ", _recipe.Tags);
+        _tagInput = RecipeTags.Format(_recipe.Tags);
 
         if (Id > 0)
         {
@@ -63,12 +63,7 @@ public sealed partial class RecipeEdit
 
         try
         {
-            _recipe.Tags =
-            [
-                .. _tagInput
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Distinct(StringComparer.CurrentCultureIgnoreCase),
-            ];
+            _recipe.Tags = RecipeTags.Parse(_tagInput);
 
             var result = await Recipes.SaveAsync(_recipe);
 

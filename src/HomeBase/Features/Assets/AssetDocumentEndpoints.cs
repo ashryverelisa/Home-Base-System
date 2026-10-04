@@ -8,7 +8,7 @@ public static class AssetDocumentEndpoints
     {
         endpoints.MapGet(
             "/documents/{id:int}",
-            async (int id, AssetService assets, AssetDocumentStore store, CancellationToken ct) =>
+            async (int id, IAssetService assets, IAssetDocumentStore store, CancellationToken ct) =>
             {
                 var document = await assets.FindDocumentAsync(id, ct);
 

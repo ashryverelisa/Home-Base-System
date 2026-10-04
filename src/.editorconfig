@@ -1,5 +1,9 @@
 root = true
 
+[*.cs]
+# C#-only solution - VB keyword clashes (Date, To, ...) in interface parameters don't matter
+dotnet_diagnostic.CA1716.severity = none
+
 [**/Migrations/*.cs]
 generated_code = true
 dotnet_diagnostic.CA1861.severity = none

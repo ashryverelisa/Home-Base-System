@@ -50,14 +50,10 @@ public static class Units
         );
 
     public static string PricePerUnit(decimal pricePerBaseUnit, BaseUnit unit) =>
-        unit switch
-        {
-            BaseUnit.Gram =>
-                $"{Money(pricePerBaseUnit * 1000)}/{AppStrings.Get("Unit.Kilogram.Abbreviation")}",
-            BaseUnit.Milliliter =>
-                $"{Money(pricePerBaseUnit * 1000)}/{AppStrings.Get("Unit.Liter.Abbreviation")}",
-            _ => $"{Money(pricePerBaseUnit)}/{AppStrings.Get("Unit.Piece.Abbreviation")}",
-        };
+        $"{Money(PerDisplayUnit(pricePerBaseUnit, unit))}/{DisplayAbbreviation(unit)}";
+
+    public static decimal PerDisplayUnit(decimal pricePerBaseUnit, BaseUnit unit) =>
+        unit is BaseUnit.Gram or BaseUnit.Milliliter ? pricePerBaseUnit * 1000 : pricePerBaseUnit;
 
     public static string Money(decimal amount) =>
         AppStrings.Format("Common.MoneyFormat", amount.ToString("N2", CultureInfo.CurrentCulture));

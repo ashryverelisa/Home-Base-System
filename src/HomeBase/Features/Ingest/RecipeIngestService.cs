@@ -30,7 +30,7 @@ public sealed record RecipeIngredientRequest(
 
 public sealed record RecipeIngestResult(int RecipeId, int Matched, int Unmatched, bool WasKnown);
 
-public sealed partial class RecipeIngestService(IDbContextFactory<HomeBaseDbContext> factory)
+public sealed partial class RecipeIngestService(IDbContextFactory<HomeBaseDbContext> factory) : IRecipeIngestService
 {
     [GeneratedRegex(
         @"^\s*(?<qty>\d+(?:[.,]\d+)?)?\s*(?<unit>kg|g|l|ml|el|tl|stk|stück|pcs|prise|packung)?\.?\s+(?<name>.+)$",
@@ -138,7 +138,7 @@ public sealed partial class RecipeIngestService(IDbContextFactory<HomeBaseDbCont
         );
     }
 
-    private static ParsedIngredient Parse(RecipeIngredientRequest incoming)
+    internal static ParsedIngredient Parse(RecipeIngredientRequest incoming)
     {
         if (incoming.Name is { Length: > 0 } name)
         {
@@ -218,5 +218,5 @@ public sealed partial class RecipeIngestService(IDbContextFactory<HomeBaseDbCont
     private static bool IsCount(string? unit) =>
         unit is null or "" or "stk" or "stück" or "pcs" or "packung";
 
-    private sealed record ParsedIngredient(string Name, decimal? Quantity, string? Unit);
+    internal sealed record ParsedIngredient(string Name, decimal? Quantity, string? Unit);
 }

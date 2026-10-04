@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Inventory;
 
-public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factory)
+public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factory) : IInventoryService
 {
     public async Task<IReadOnlyList<StockLotView>> GetStockAsync(
         int? locationId = null,

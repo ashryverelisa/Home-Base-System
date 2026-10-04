@@ -13,7 +13,7 @@ namespace HomeBase.Features.Purchases;
 public sealed class PurchaseService(
     IDbContextFactory<HomeBaseDbContext> factory,
     IStringLocalizer<AppStrings> localizer
-)
+) : IPurchaseService
 {
     public async Task<IReadOnlyList<PurchaseRow>> GetPurchasesAsync(
         int take = 50,
@@ -164,7 +164,7 @@ public sealed class PurchaseService(
         return true;
     }
 
-    private static PurchaseItem ToItem(PurchaseDraftLine line, int lineNo)
+    internal static PurchaseItem ToItem(PurchaseDraftLine line, int lineNo)
     {
         var total = line.SignedTotal;
         var quantity = line.IsItem ? line.Quantity : 1m;

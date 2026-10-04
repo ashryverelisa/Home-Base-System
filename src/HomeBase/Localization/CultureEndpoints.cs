@@ -35,7 +35,7 @@ public static class CultureEndpoints
         return endpoints;
     }
 
-    private static string LocalOrHome(string? redirectUri)
+    internal static string LocalOrHome(string? redirectUri)
     {
         if (string.IsNullOrEmpty(redirectUri) || redirectUri[0] != '/')
         {

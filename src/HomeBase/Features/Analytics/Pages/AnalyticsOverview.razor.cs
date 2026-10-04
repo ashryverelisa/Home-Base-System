@@ -147,11 +147,7 @@ public sealed partial class AnalyticsOverview
         new() { ChartPalette = ChartPalette.Slot(IsDarkMode, slot) };
 
     private decimal PerDisplayUnit(decimal pricePerBaseUnit) =>
-        SelectedUnit switch
-        {
-            BaseUnit.Gram or BaseUnit.Milliliter => pricePerBaseUnit * 1000m,
-            _ => pricePerBaseUnit,
-        };
+        SelectedUnit is { } unit ? Units.PerDisplayUnit(pricePerBaseUnit, unit) : pricePerBaseUnit;
 
     private static string MonthLabel(DateTimeOffset month) =>
         month.ToString("MMM yy", Culture);

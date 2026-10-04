@@ -35,12 +35,16 @@ public sealed record StockLotView(
             lot.PurchaseItem!.PricePerBaseUnit
         );
 
+    public const int ExpiryWarningDays = 3;
+
     public int? DaysLeft =>
         BestBefore is { } date
             ? date.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber
             : null;
 
     public bool IsExpired => DaysLeft is < 0;
+
+    public bool ExpiresSoon => DaysLeft is >= 0 and <= ExpiryWarningDays;
 
     public bool IsOpened => OpenedAt is not null;
 

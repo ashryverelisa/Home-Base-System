@@ -11,13 +11,13 @@ public sealed partial class MealPlanWeek
     private static readonly MealSlot[] Slots = Enum.GetValues<MealSlot>();
 
     private readonly Dictionary<long, decimal> _costs = [];
-    private readonly List<CookEntry> _cookLines = [];
+    private readonly List<CookSelection> _cookLines = [];
 
     private IReadOnlyList<MealPlanRow>? _entries;
     private IReadOnlyList<NeedRow>? _needs;
     private CookPlan? _cookPlan;
     private RecipeRow? _picked;
-    private DateOnly _weekStart = StartOfWeek(DateOnly.FromDateTime(DateTime.Today));
+    private DateOnly _weekStart = PlanWeek.StartOf(DateOnly.FromDateTime(DateTime.Today));
     private DateTime? _newDate = DateTime.Today;
     private MealSlot _newSlot = MealSlot.Dinner;
     private string _entryText = string.Empty;
@@ -76,7 +76,7 @@ public sealed partial class MealPlanWeek
 
     private async Task GoToTodayAsync()
     {
-        _weekStart = StartOfWeek(DateOnly.FromDateTime(DateTime.Today));
+        _weekStart = PlanWeek.StartOf(DateOnly.FromDateTime(DateTime.Today));
         CancelCook();
 
         await LoadAsync();
@@ -142,17 +142,7 @@ public sealed partial class MealPlanWeek
             return;
         }
 
-        foreach (var line in _cookPlan.Lines)
-        {
-            _cookLines.Add(
-                new CookEntry
-                {
-                    Line = line,
-                    Quantity = line.Needed,
-                    Include = !line.IsOptional || line.IsCovered,
-                }
-            );
-        }
+        _cookLines.AddRange(_cookPlan.Lines.Select(CookSelection.For));
     }
 
     private void CancelCook()
@@ -174,12 +164,7 @@ public sealed partial class MealPlanWeek
 
         try
         {
-            var lines = _cookLines
-                .Where(l => l.Include && l.Quantity > 0)
-                .Select(l => l.Line with { Needed = l.Quantity })
-                .ToList();
-
-            var result = await Plan.CookAsync(entryId, lines);
+            var result = await Plan.CookAsync(entryId, CookSelection.ToBook(_cookLines));
 
             if (!result.Succeeded)
             {
@@ -234,16 +219,4 @@ public sealed partial class MealPlanWeek
 
     private static string DayLabel(DateOnly day) =>
         day.ToString("dddd, d. MMMM", CultureInfo.CurrentCulture);
-
-    private static DateOnly StartOfWeek(DateOnly day) =>
-        day.AddDays(-(((int)day.DayOfWeek + 6) % 7));
-
-    private sealed class CookEntry
-    {
-        public required CookLine Line { get; init; }
-
-        public decimal Quantity { get; set; }
-
-        public bool Include { get; set; } = true;
-    }
 }

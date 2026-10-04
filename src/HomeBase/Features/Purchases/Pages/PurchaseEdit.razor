@@ -1,6 +1,6 @@
 @page "/purchases/new"
-@inject PurchaseService Purchases
-@inject CatalogService Catalog
+@inject IPurchaseService Purchases
+@inject ICatalogService Catalog
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 
@@ -113,14 +113,14 @@
                                  Format="N2"
                                  Min="0"/>
             </MudItem>
-            @if (_line.LineType == PurchaseLineType.Discount && ItemLineIndexes.Count > 0)
+            @if (_line.LineType == PurchaseLineType.Discount && _draft.ItemLineIndexes.Count > 0)
             {
                 <MudItem xs="12" sm="3">
                     <MudSelect @bind-Value="_line.ParentIndex"
                                Label="@Localizer["Purchases.BelongsTo"]"
                                Variant="Variant.Outlined"
                                Clearable="true">
-                        @foreach (var index in ItemLineIndexes)
+                        @foreach (var index in _draft.ItemLineIndexes)
                         {
                             <MudSelectItem T="int?" Value="@index">
                                 @_draft.Lines[index].Label
