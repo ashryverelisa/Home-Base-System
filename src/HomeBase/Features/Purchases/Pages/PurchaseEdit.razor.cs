@@ -30,8 +30,8 @@ public sealed partial class PurchaseEdit
         get => _draft.PurchasedAt.LocalDateTime;
         set =>
             _draft.PurchasedAt = value is { } date
-                ? new DateTimeOffset(date, DateTimeOffset.Now.Offset)
-                : DateTimeOffset.Now;
+                ? new DateTimeOffset(date, Time.GetLocalNow().Offset)
+                : Time.GetLocalNow();
     }
 
     private DateTime? BestBeforeDate
@@ -46,7 +46,11 @@ public sealed partial class PurchaseEdit
         set => _line.QuantityBase = value;
     }
 
-    protected override async Task OnInitializedAsync() => _stores = await Purchases.GetStoresAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _draft.PurchasedAt = Time.GetLocalNow();
+        _stores = await Purchases.GetStoresAsync();
+    }
 
     private Task<IEnumerable<string>> SearchStoresAsync(string? term, CancellationToken ct) =>
         Task.FromResult<IEnumerable<string>>(

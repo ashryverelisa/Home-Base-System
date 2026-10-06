@@ -37,10 +37,17 @@ public sealed partial class AnalyticsOverview
 
     private static CultureInfo Culture => CultureInfo.CurrentCulture;
 
-    private decimal CurrentMonthTotal =>
-        _months?.FirstOrDefault(m =>
-            m.Month.Month == DateTime.UtcNow.Month && m.Month.Year == DateTime.UtcNow.Year
-        )?.Total ?? 0m;
+    private decimal CurrentMonthTotal
+    {
+        get
+        {
+            var now = Time.GetUtcNow();
+
+            return _months?.FirstOrDefault(m =>
+                    m.Month.Month == now.Month && m.Month.Year == now.Year
+                )?.Total ?? 0m;
+        }
+    }
 
     private decimal WasteTotal => _waste?.Sum(w => w.Cost) ?? 0m;
 

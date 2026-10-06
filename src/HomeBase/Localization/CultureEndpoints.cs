@@ -10,7 +10,7 @@ public static class CultureEndpoints
     {
         endpoints.MapGet(
             SetCulturePath,
-            (HttpContext http, string? culture, string? redirectUri) =>
+            (HttpContext http, TimeProvider time, string? culture, string? redirectUri) =>
             {
                 if (SupportedCultures.IsSupported(culture))
                 {
@@ -20,7 +20,7 @@ public static class CultureEndpoints
                         new CookieOptions
                         {
                             Path = "/",
-                            Expires = DateTimeOffset.UtcNow.AddYears(1),
+                            Expires = time.GetUtcNow().AddYears(1),
                             HttpOnly = true,
                             SameSite = SameSiteMode.Lax,
                             IsEssential = true,

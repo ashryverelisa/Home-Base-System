@@ -30,11 +30,6 @@ public sealed class InventoryService(
             lots = lots.InLocations(await db.StorageLocations.BranchIdsAsync(id, ct));
         }
 
-        if (withinDays is not { } days)
-            return await lots.FirstExpiredFirstOut()
-                .Select(StockLotView.Projection)
-                .ToListAsync(ct);
-
         var today = time.Today();
 
         lots = lots.DueBy(
@@ -42,7 +37,9 @@ public sealed class InventoryService(
             today.AddDays(Zones.WarningDays(StorageZone.Freezer, days))
         );
 
-        return await lots.FirstExpiredFirstOut().Select(StockLotView.Projection).ToListAsync(ct);
+        return await lots.FirstExpiredFirstOut()
+            .Select(StockLotView.Projection(today))
+            .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<LowStockRow>> GetLowStockAsync(CancellationToken ct = default)

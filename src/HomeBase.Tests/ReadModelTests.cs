@@ -13,7 +13,7 @@ namespace HomeBase.Tests;
 
 public class ReadModelTests
 {
-    private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.Today);
+    private static readonly DateOnly Today = new(2026, 3, 15);
 
     private static AssetRow Asset(DateOnly? warrantyUntil = null, DateOnly? nextServiceAt = null) =>
         new(
@@ -30,7 +30,10 @@ public class ReadModelTests
             null,
             warrantyUntil,
             nextServiceAt
-        );
+        )
+        {
+            Today = Today,
+        };
 
     private static StockLotView Lot(
         DateOnly? bestBefore,
@@ -51,7 +54,10 @@ public class ReadModelTests
             null,
             zone,
             price
-        );
+        )
+        {
+            Today = Today,
+        };
 
     [Theory]
     [InlineData(-1, true, false)]

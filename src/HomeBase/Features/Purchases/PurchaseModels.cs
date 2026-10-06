@@ -7,7 +7,7 @@ public sealed class PurchaseDraft
 {
     public int? StoreId { get; set; }
     public string? StoreName { get; set; }
-    public DateTimeOffset PurchasedAt { get; set; } = DateTimeOffset.Now;
+    public DateTimeOffset PurchasedAt { get; set; }
     public string? PaymentMethod { get; set; }
     public decimal? ReceiptTotal { get; set; }
     public bool BookIntoStock { get; set; } = true;

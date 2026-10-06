@@ -1,6 +1,7 @@
 using System.Globalization;
 using HomeBase.Components.Shared;
 using HomeBase.Database.Enums;
+using HomeBase.Features.Common;
 using HomeBase.Features.Recipes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
@@ -18,8 +19,8 @@ public sealed partial class MealPlanWeek
     private IReadOnlyDictionary<long, decimal> _costs = new Dictionary<long, decimal>();
     private CookPlan? _cookPlan;
     private RecipeRow? _picked;
-    private DateOnly _weekStart = PlanWeek.StartOf(DateOnly.FromDateTime(DateTime.Today));
-    private DateTime? _newDate = DateTime.Today;
+    private DateOnly _weekStart;
+    private DateTime? _newDate;
     private MealSlot _newSlot = MealSlot.Dinner;
     private string _entryText = string.Empty;
     private int _newServings = 2;
@@ -40,6 +41,9 @@ public sealed partial class MealPlanWeek
 
     protected override async Task OnInitializedAsync()
     {
+        _weekStart = PlanWeek.StartOf(Time.Today());
+        _newDate = Time.GetLocalNow().Date;
+
         await LoadAsync();
 
         var query = QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);
@@ -71,7 +75,7 @@ public sealed partial class MealPlanWeek
 
     private async Task GoToTodayAsync()
     {
-        _weekStart = PlanWeek.StartOf(DateOnly.FromDateTime(DateTime.Today));
+        _weekStart = PlanWeek.StartOf(Time.Today());
         CancelCook();
 
         await LoadAsync();
@@ -104,7 +108,7 @@ public sealed partial class MealPlanWeek
             await Plan.AddAsync(
                 _newDate is { } date
                     ? DateOnly.FromDateTime(date)
-                    : DateOnly.FromDateTime(DateTime.Today),
+                    : Time.Today(),
                 _newSlot,
                 _picked?.Id,
                 _picked is null ? _entryText : null,

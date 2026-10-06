@@ -44,7 +44,7 @@ public sealed class AssetService(
             assets = assets.ServiceDueUntil(today);
         }
 
-        var rows = await assets.InDisplayOrder().Select(AssetRow.Projection).ToListAsync(ct);
+        var rows = await assets.InDisplayOrder().Select(AssetRow.Projection(today)).ToListAsync(ct);
 
         var counts = await db.AssetDocuments.DocumentCountsAsync(ct);
 

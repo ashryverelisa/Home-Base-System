@@ -20,7 +20,8 @@ public sealed record AssetRow(
     DateOnly? NextServiceAt
 )
 {
-    public static readonly Expression<Func<Asset, AssetRow>> Projection =
+    // Warranty and service state are judged against the day the caller reads the list on.
+    public static Expression<Func<Asset, AssetRow>> Projection(DateOnly today) =>
         asset => new AssetRow(
             asset.Id,
             asset.Name,
@@ -35,15 +36,20 @@ public sealed record AssetRow(
             asset.CurrentValue,
             asset.WarrantyUntil,
             asset.NextServiceAt
-        );
+        )
+        {
+            Today = today,
+        };
 
     public const int WarrantyWarningDays = 60;
+
+    public required DateOnly Today { get; init; }
 
     public int DocumentCount { get; init; }
 
     public int? WarrantyDaysLeft =>
         WarrantyUntil is { } until
-            ? until.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber
+            ? until.DayNumber - Today.DayNumber
             : null;
 
     public bool WarrantyExpired => WarrantyDaysLeft is < 0;
@@ -51,5 +57,5 @@ public sealed record AssetRow(
     public bool WarrantyEndingSoon => WarrantyDaysLeft is >= 0 and <= WarrantyWarningDays;
 
     public bool ServiceDue =>
-        NextServiceAt is { } due && due <= DateOnly.FromDateTime(DateTime.Today);
+        NextServiceAt is { } due && due <= Today;
 }

@@ -20,7 +20,8 @@ public sealed record StockLotView(
     decimal? PricePerBaseUnit
 )
 {
-    public static readonly Expression<Func<StockLot, StockLotView>> Projection =
+    // Days left are counted from the day the caller reads the stock on.
+    public static Expression<Func<StockLot, StockLotView>> Projection(DateOnly today) =>
         lot => new StockLotView(
             lot.Id,
             lot.ProductId,
@@ -34,13 +35,18 @@ public sealed record StockLotView(
             lot.Location!.Name,
             lot.Location.Zone,
             lot.PurchaseItem!.PricePerBaseUnit
-        );
+        )
+        {
+            Today = today,
+        };
 
     public const int ExpiryWarningDays = 3;
 
+    public required DateOnly Today { get; init; }
+
     public int? DaysLeft =>
         BestBefore is { } date
-            ? date.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber
+            ? date.DayNumber - Today.DayNumber
             : null;
 
     public bool IsExpired => DaysLeft is < 0;

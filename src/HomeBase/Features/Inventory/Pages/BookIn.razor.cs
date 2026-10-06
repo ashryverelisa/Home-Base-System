@@ -31,7 +31,7 @@ public partial class BookIn
         set => _bestBefore = value is { } date ? DateOnly.FromDateTime(date) : null;
     }
 
-    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly Today => Time.Today();
 
     private int? LearnableShelfLife =>
         ShelfLife.Learnable(_bestBefore, _selected?.DefaultShelfLifeDays, Today);

@@ -2,6 +2,7 @@ using HomeBase.Components.Shared;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
+using HomeBase.Features.Common;
 using Microsoft.AspNetCore.Components;
 
 namespace HomeBase.Features.Recipes.Pages;
@@ -153,7 +154,7 @@ public sealed partial class RecipeEdit
         }
 
         var entryId = await Plan.AddAsync(
-            DateOnly.FromDateTime(DateTime.Today),
+            Time.Today(),
             MealSlot.Dinner,
             Id,
             null,
