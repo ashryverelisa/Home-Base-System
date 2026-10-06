@@ -271,6 +271,12 @@
   <data name="Stock.ExpiresToday" xml:space="preserve">
     <value>expires today</value>
   </data>
+  <data name="Stock.MoveReason" xml:space="preserve">
+    <value>Moved</value>
+  </data>
+  <data name="Stock.BestBeforeReset" xml:space="preserve">
+    <value>Best-before date reset</value>
+  </data>
   <data name="Stock.ExpiresTomorrow" xml:space="preserve">
     <value>expires tomorrow</value>
   </data>

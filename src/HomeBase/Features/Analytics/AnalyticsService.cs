@@ -3,8 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Analytics;
 
-public sealed class AnalyticsService(IDbContextFactory<HomeBaseDbContext> factory)
-    : IAnalyticsService
+public sealed class AnalyticsService(
+    IDbContextFactory<HomeBaseDbContext> factory,
+    TimeProvider time
+) : IAnalyticsService
 {
     public async Task<IReadOnlyList<MonthlySpendRow>> GetMonthlySpendAsync(
         int months = 12,
@@ -341,9 +343,9 @@ public sealed class AnalyticsService(IDbContextFactory<HomeBaseDbContext> factor
         ];
     }
 
-    private static DateTimeOffset FirstOfMonth(int monthsBack)
+    private DateTimeOffset FirstOfMonth(int monthsBack)
     {
-        var today = DateTime.UtcNow;
+        var today = time.GetUtcNow();
 
         return new DateTimeOffset(
             new DateTime(today.Year, today.Month, 1),

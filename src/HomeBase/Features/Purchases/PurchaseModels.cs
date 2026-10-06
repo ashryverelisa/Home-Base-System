@@ -119,10 +119,3 @@ public sealed class PurchaseDraftLine
         return LineTotal == 0 ? "Purchases.AmountRequired" : null;
     }
 }
-
-public sealed record PurchaseSaveResult(bool Succeeded, long PurchaseId, string? Error)
-{
-    public static PurchaseSaveResult Ok(long purchaseId) => new(true, purchaseId, null);
-
-    public static PurchaseSaveResult Failed(string error) => new(false, 0, error);
-}

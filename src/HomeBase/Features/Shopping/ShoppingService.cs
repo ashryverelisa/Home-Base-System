@@ -2,6 +2,7 @@ using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
+using HomeBase.Features.Common;
 using HomeBase.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -10,7 +11,8 @@ namespace HomeBase.Features.Shopping;
 
 public sealed class ShoppingService(
     IDbContextFactory<HomeBaseDbContext> factory,
-    IStringLocalizer<AppStrings> localizer
+    IStringLocalizer<AppStrings> localizer,
+    TimeProvider time
 ) : IShoppingService
 {
     public async Task<IReadOnlyList<ShoppingListRow>> GetListsAsync(CancellationToken ct = default)
@@ -59,7 +61,7 @@ public sealed class ShoppingService(
         ];
     }
 
-    public async Task<ShoppingSaveResult> AddProductAsync(
+    public async Task<SaveResult<long>> AddProductAsync(
         AddProductRequest request,
         CancellationToken ct = default
     )
@@ -88,7 +90,7 @@ public sealed class ShoppingService(
 
             await db.SaveChangesAsync(ct);
 
-            return ShoppingSaveResult.Ok(existing.Id);
+            return SaveResult.Ok(existing.Id);
         }
 
         var item = new ShoppingListItem
@@ -105,10 +107,10 @@ public sealed class ShoppingService(
         db.ShoppingListItems.Add(item);
         await db.SaveChangesAsync(ct);
 
-        return ShoppingSaveResult.Ok(item.Id);
+        return SaveResult.Ok(item.Id);
     }
 
-    public async Task<ShoppingSaveResult> AddFreeTextAsync(
+    public async Task<SaveResult<long>> AddFreeTextAsync(
         AddFreeTextRequest request,
         CancellationToken ct = default
     )
@@ -117,7 +119,7 @@ public sealed class ShoppingService(
 
         if (text.Length == 0)
         {
-            return ShoppingSaveResult.Failed(localizer["Shopping.TextRequired"]);
+            return SaveResult.Failed<long>(localizer["Shopping.TextRequired"]);
         }
 
         await using var db = await factory.CreateDbContextAsync(ct);
@@ -127,7 +129,7 @@ public sealed class ShoppingService(
             ListId = request.ListId,
             FreeText = text,
             Quantity = request.Quantity,
-            Unit = string.IsNullOrWhiteSpace(request.Unit) ? null : request.Unit.Trim(),
+            Unit = request.Unit.TrimToNull(),
             TargetPrice = NormalizePrice(request.TargetPrice),
             Priority = (int)request.Priority,
             Note = request.Note,
@@ -137,7 +139,7 @@ public sealed class ShoppingService(
         db.ShoppingListItems.Add(item);
         await db.SaveChangesAsync(ct);
 
-        return ShoppingSaveResult.Ok(item.Id);
+        return SaveResult.Ok(item.Id);
     }
 
     public async Task SetStatusAsync(
@@ -156,86 +158,28 @@ public sealed class ShoppingService(
         }
 
         item.Status = status;
-        item.BoughtAt = status == ShoppingListItemStatus.Bought ? DateTimeOffset.UtcNow : null;
+        item.BoughtAt = status == ShoppingListItemStatus.Bought ? time.GetUtcNow() : null;
 
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task SetQuantityAsync(
+    public Task SetQuantityAsync(
         long itemId,
         decimal? quantity,
         CancellationToken ct = default
-    )
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
+    ) => UpdateItemAsync(itemId, item => item.Quantity = quantity is > 0 ? quantity : null, ct);
 
-        var item = await db.ShoppingListItems.FindAsync([itemId], ct);
+    public Task SetTargetPriceAsync(long itemId, decimal? price, CancellationToken ct = default) =>
+        UpdateItemAsync(itemId, item => item.TargetPrice = NormalizePrice(price), ct);
 
-        if (item is null)
-        {
-            return;
-        }
-
-        item.Quantity = quantity is > 0 ? quantity : null;
-
-        await db.SaveChangesAsync(ct);
-    }
-
-    public async Task SetTargetPriceAsync(
-        long itemId,
-        decimal? price,
-        CancellationToken ct = default
-    )
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
-
-        var item = await db.ShoppingListItems.FindAsync([itemId], ct);
-
-        if (item is null)
-        {
-            return;
-        }
-
-        item.TargetPrice = NormalizePrice(price);
-
-        await db.SaveChangesAsync(ct);
-    }
-
-    public async Task SetPriorityAsync(
+    public Task SetPriorityAsync(
         long itemId,
         ShoppingPriority priority,
         CancellationToken ct = default
-    )
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
+    ) => UpdateItemAsync(itemId, item => item.Priority = (int)priority, ct);
 
-        var item = await db.ShoppingListItems.FindAsync([itemId], ct);
-
-        if (item is null)
-        {
-            return;
-        }
-
-        item.Priority = (int)priority;
-
-        await db.SaveChangesAsync(ct);
-    }
-
-    public async Task ToggleImportantAsync(long itemId, CancellationToken ct = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
-
-        var item = await db.ShoppingListItems.FindAsync([itemId], ct);
-
-        if (item is null)
-        {
-            return;
-        }
-
-        item.Priority = item.Priority > 0 ? 0 : 1;
-
-        await db.SaveChangesAsync(ct);
-    }
+    public Task ToggleImportantAsync(long itemId, CancellationToken ct = default) =>
+        UpdateItemAsync(itemId, item => item.Priority = item.Priority > 0 ? 0 : 1, ct);
 
     public async Task RemoveAsync(long itemId, CancellationToken ct = default)
     {
@@ -319,6 +263,26 @@ public sealed class ShoppingService(
         }
 
         return added;
+    }
+
+    private async Task UpdateItemAsync(
+        long itemId,
+        Action<ShoppingListItem> change,
+        CancellationToken ct
+    )
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        var item = await db.ShoppingListItems.FindAsync([itemId], ct);
+
+        if (item is null)
+        {
+            return;
+        }
+
+        change(item);
+
+        await db.SaveChangesAsync(ct);
     }
 
     internal static ShoppingList TargetList(

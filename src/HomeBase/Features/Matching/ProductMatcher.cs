@@ -1,9 +1,8 @@
 using HomeBase.Database;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
-using HomeBase.Features.Common;
 
-namespace HomeBase.Features.Ingest;
+namespace HomeBase.Features.Matching;
 
 public sealed record ProductMatch(
     int? ProductId,

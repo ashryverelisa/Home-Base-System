@@ -1,4 +1,5 @@
 using HomeBase.Database.Entities;
+using HomeBase.Features.Common;
 
 namespace HomeBase.Features.Purchases;
 
@@ -17,7 +18,7 @@ public interface IPurchaseService
 
     Task<IReadOnlyList<Store>> GetStoresAsync(CancellationToken ct = default);
 
-    Task<PurchaseSaveResult> SaveAsync(PurchaseDraft draft, CancellationToken ct = default);
+    Task<SaveResult<long>> SaveAsync(PurchaseDraft draft, CancellationToken ct = default);
 
     Task<bool> ConfirmAsync(long purchaseId, CancellationToken ct = default);
 }

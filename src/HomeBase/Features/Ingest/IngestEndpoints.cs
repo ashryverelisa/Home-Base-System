@@ -1,5 +1,6 @@
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
+using HomeBase.Features.Common;
 using HomeBase.Features.Inventory;
 using HomeBase.Features.Purchases;
 using HomeBase.Features.Shopping;
@@ -94,26 +95,18 @@ public static class IngestEndpoints
             pending = [.. pending.Where(p => p.Status == wanted)];
         }
 
-        var summaries = new List<ReceiptSummary>(pending.Count);
-
-        foreach (var row in pending)
-        {
-            var lines = await purchases.GetLinesAsync(row.Id, ct);
-
-            summaries.Add(
-                new ReceiptSummary(
-                    row.Id,
-                    row.Status.ToString(),
-                    row.PurchasedAt,
-                    row.StoreName,
-                    row.Total,
-                    lines.Count,
-                    lines.Count(l =>
-                        l.LineType == PurchaseLineType.Item && l.ProductId is null
-                    )
-                )
-            );
-        }
+        List<ReceiptSummary> summaries =
+        [
+            .. pending.Select(row => new ReceiptSummary(
+                row.Id,
+                row.Status.ToString(),
+                row.PurchasedAt,
+                row.StoreName,
+                row.Total,
+                row.LineCount,
+                row.UnmatchedCount
+            )),
+        ];
 
         return Results.Ok(summaries);
     }
@@ -152,38 +145,14 @@ public static class IngestEndpoints
     {
         if (gtin is { Length: > 0 })
         {
-            var matches = await catalog.SearchAsync(gtin, ct);
-            var product = matches.FirstOrDefault(r => r.Gtin == gtin.Trim());
-
-            return product is null
-                ? Results.NotFound()
-                : Results.Ok(
-                    new ProductSummary(
-                        product.Id,
-                        product.Name,
-                        product.Brand,
-                        product.Gtin,
-                        product.BaseUnit.ToString(),
-                        product.PackageSize,
-                        product.StockBase
-                    )
-                );
+            return await catalog.FindRowByGtinAsync(gtin, ct) is { } product
+                ? Results.Ok(ProductSummary.From(product))
+                : Results.NotFound();
         }
 
         var rows = await catalog.SearchAsync(q, ct);
 
-        return Results.Ok(
-            rows.Select(r => new ProductSummary(
-                    r.Id,
-                    r.Name,
-                    r.Brand,
-                    r.Gtin,
-                    r.BaseUnit.ToString(),
-                    r.PackageSize,
-                    r.StockBase
-                ))
-                .Take(50)
-        );
+        return Results.Ok(rows.Select(ProductSummary.From).Take(50));
     }
 
     internal static async Task<IResult> PostShoppingItemAsync(
@@ -217,11 +186,11 @@ public static class IngestEndpoints
                 ),
                 ct
             ),
-            _ => ShoppingSaveResult.Failed("Either productId or text is required."),
+            _ => SaveResult.Failed<long>("Either productId or text is required."),
         };
 
         return result.Succeeded
-            ? Results.Created($"/api/v1/shopping-lists/{id}/items/{result.ItemId}", new { itemId = result.ItemId })
+            ? Results.Created($"/api/v1/shopping-lists/{id}/items/{result.Id}", new { itemId = result.Id })
             : Results.BadRequest(new { error = result.Error });
     }
 

@@ -26,4 +26,6 @@ public sealed record PurchaseRow(
         );
 
     public int LineCount { get; init; }
+
+    public int UnmatchedCount { get; init; }
 }

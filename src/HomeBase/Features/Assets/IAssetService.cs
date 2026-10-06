@@ -1,5 +1,6 @@
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
+using HomeBase.Features.Common;
 
 namespace HomeBase.Features.Assets;
 
@@ -12,7 +13,7 @@ public interface IAssetService
 
     Task<Asset?> FindAsync(int id, CancellationToken ct = default);
 
-    Task<AssetSaveResult> SaveAsync(Asset asset, CancellationToken ct = default);
+    Task<SaveResult<int>> SaveAsync(Asset asset, CancellationToken ct = default);
 
     Task SetStatusAsync(int id, AssetStatus status, CancellationToken ct = default);
 

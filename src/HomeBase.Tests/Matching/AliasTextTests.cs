@@ -1,6 +1,6 @@
-using HomeBase.Features.Common;
+using HomeBase.Features.Matching;
 
-namespace HomeBase.Tests.Common;
+namespace HomeBase.Tests.Matching;
 
 public class AliasTextTests
 {

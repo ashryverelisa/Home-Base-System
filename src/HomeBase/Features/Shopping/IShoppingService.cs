@@ -1,4 +1,5 @@
 using HomeBase.Database.Enums;
+using HomeBase.Features.Common;
 
 namespace HomeBase.Features.Shopping;
 
@@ -12,12 +13,12 @@ public interface IShoppingService
         CancellationToken ct = default
     );
 
-    Task<ShoppingSaveResult> AddProductAsync(
+    Task<SaveResult<long>> AddProductAsync(
         AddProductRequest request,
         CancellationToken ct = default
     );
 
-    Task<ShoppingSaveResult> AddFreeTextAsync(
+    Task<SaveResult<long>> AddFreeTextAsync(
         AddFreeTextRequest request,
         CancellationToken ct = default
     );

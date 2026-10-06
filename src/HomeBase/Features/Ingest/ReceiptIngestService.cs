@@ -3,6 +3,8 @@ using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
 using HomeBase.Features.Common;
+using HomeBase.Features.Matching;
+using HomeBase.Features.Purchases;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Ingest;
@@ -15,7 +17,10 @@ public sealed record ReceiptIngestResult(
     bool WasKnown
 );
 
-public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> factory) : IReceiptIngestService
+public sealed class ReceiptIngestService(
+    IDbContextFactory<HomeBaseDbContext> factory,
+    TimeProvider time
+) : IReceiptIngestService
 {
     public async Task<ReceiptIngestResult?> IngestAsync(
         ReceiptRequest request,
@@ -29,35 +34,24 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
 
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        if (request.ExternalId is { Length: > 0 } externalId)
+        if (
+            request.ExternalId is { Length: > 0 } externalId
+            && await ReadKnownAsync(db, externalId, ct) is { } known
+        )
         {
-            var known = await db
-                .Purchases.Where(p => p.ExternalId == externalId)
-                .Select(p => new { p.Id, p.Status })
-                .FirstOrDefaultAsync(ct);
-
-            if (known is not null)
-            {
-                var counts = await CountMatchesAsync(db, known.Id, ct);
-
-                return new ReceiptIngestResult(
-                    known.Id,
-                    known.Status,
-                    counts.Matched,
-                    counts.Unmatched,
-                    WasKnown: true
-                );
-            }
+            return known;
         }
 
-        var storeId = await ResolveStoreAsync(db, request.Store, ct);
+        var storeId = request.Store is { } store
+            ? await StoreResolver.FindOrCreateAsync(db, store.Name, store.TaxId, ct)
+            : null;
 
         var purchase = new Purchase
         {
             StoreId = storeId,
-            PurchasedAt = request.PurchasedAt ?? DateTimeOffset.UtcNow,
+            PurchasedAt = request.PurchasedAt ?? time.GetUtcNow(),
             Total = request.Total,
-            Currency = string.IsNullOrWhiteSpace(request.Currency) ? "EUR" : request.Currency.Trim(),
+            Currency = request.Currency.TrimToNull() ?? "EUR",
             PaymentMethod = request.PaymentMethod,
             Source = PurchaseSource.N8nReceipt,
             ExternalId = request.ExternalId,
@@ -86,10 +80,17 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
         catch (DbUpdateException) when (request.ExternalId is { Length: > 0 })
         {
             // A retry from n8n raced us; the unique external_id kept the receipt single.
-            return await ReadKnownAsync(request.ExternalId, ct);
+            await using var fresh = await factory.CreateDbContextAsync(ct);
+
+            return await ReadKnownAsync(fresh, request.ExternalId, ct);
         }
 
-        await LinkDiscountsAsync(db, purchase, lines, ct);
+        await DiscountLinker.LinkAsync(
+            db,
+            purchase.Items,
+            [.. lines.Select(l => l.ParentIndex)],
+            ct
+        );
 
         return new ReceiptIngestResult(
             purchase.Id,
@@ -100,13 +101,12 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
         );
     }
 
-    private async Task<ReceiptIngestResult?> ReadKnownAsync(
+    private static async Task<ReceiptIngestResult?> ReadKnownAsync(
+        HomeBaseDbContext db,
         string externalId,
         CancellationToken ct
     )
     {
-        await using var db = await factory.CreateDbContextAsync(ct);
-
         var known = await db
             .Purchases.Where(p => p.ExternalId == externalId)
             .Select(p => new { p.Id, p.Status })
@@ -147,8 +147,8 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
             {
                 LineNo = source.LineNo ?? index + 1,
                 LineType = lineType,
-                RawText = string.IsNullOrWhiteSpace(source.RawText) ? null : source.RawText.Trim(),
-                Gtin = string.IsNullOrWhiteSpace(source.Gtin) ? null : source.Gtin.Trim(),
+                RawText = source.RawText.TrimToNull(),
+                Gtin = source.Gtin.TrimToNull(),
                 Quantity = source.Quantity,
                 UnitPrice = source.UnitPrice,
                 LineTotal = source.LineTotal,
@@ -174,17 +174,6 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
                 item.MatchConfidence = match.Confidence;
                 item.SuggestedProductId = match.SuggestedProductId;
 
-                if (match.ProductId is { } productId)
-                {
-                    item.QuantityBase = await NormalizeQuantityAsync(
-                        db,
-                        productId,
-                        source.Quantity,
-                        source.Unit,
-                        ct
-                    );
-                }
-
                 lastItemIndex = index;
             }
 
@@ -193,8 +182,10 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
                 lines[parent].Item.IsPromo = true;
             }
 
-            lines.Add(new BuiltLine(item, parentIndex));
+            lines.Add(new BuiltLine(item, source, parentIndex));
         }
+
+        await NormalizeQuantitiesAsync(db, lines, ct);
 
         return lines;
     }
@@ -209,99 +200,57 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
             _ => PurchaseLineType.Item,
         };
 
-    private static async Task<decimal?> NormalizeQuantityAsync(
+    private static async Task NormalizeQuantitiesAsync(
         HomeBaseDbContext db,
-        int productId,
-        decimal quantity,
-        string? unit,
-        CancellationToken ct
-    )
-    {
-        var product = await db
-            .Products.Where(p => p.Id == productId)
-            .Select(p => new { p.BaseUnit, p.PackageSize })
-            .FirstOrDefaultAsync(ct);
-
-        if (product is null)
-        {
-            return null;
-        }
-
-        return (unit?.Trim().ToLowerInvariant(), product.BaseUnit) switch
-        {
-            ("kg", BaseUnit.Gram) or ("l", BaseUnit.Milliliter) => quantity * 1000m,
-            ("g", BaseUnit.Gram) or ("ml", BaseUnit.Milliliter) => quantity,
-            _ => quantity * product.PackageSize,
-        };
-    }
-
-    private static async Task<int?> ResolveStoreAsync(
-        HomeBaseDbContext db,
-        ReceiptStore? store,
-        CancellationToken ct
-    )
-    {
-        if (store is null)
-        {
-            return null;
-        }
-
-        if (store.TaxId is { Length: > 0 } taxId)
-        {
-            var byTaxId = await db.Stores.FirstOrDefaultAsync(s => s.TaxId == taxId, ct);
-
-            if (byTaxId is not null)
-            {
-                return byTaxId.Id;
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(store.Name))
-        {
-            return null;
-        }
-
-        var name = store.Name.Trim();
-        var existing = await db.Stores.ByNameAsync(name, ct);
-
-        if (existing is not null)
-        {
-            return existing.Id;
-        }
-
-        var created = new Store { Name = name, TaxId = store.TaxId };
-
-        db.Stores.Add(created);
-        await db.SaveChangesAsync(ct);
-
-        return created.Id;
-    }
-
-    private static async Task LinkDiscountsAsync(
-        HomeBaseDbContext db,
-        Purchase purchase,
         List<BuiltLine> lines,
         CancellationToken ct
     )
     {
-        var linked = false;
+        var productIds = lines
+            .Where(l => l.Item.ProductId is not null)
+            .Select(l => l.Item.ProductId!.Value)
+            .Distinct()
+            .ToList();
 
-        for (var index = 0; index < lines.Count; index++)
+        if (productIds.Count == 0)
         {
-            if (lines[index].ParentIndex is not { } parent)
-            {
-                continue;
-            }
-
-            purchase.Items[index].ParentItemId = purchase.Items[parent].Id;
-            linked = true;
+            return;
         }
 
-        if (linked)
+        var products = await db
+            .Products.Where(p => productIds.Contains(p.Id))
+            .Select(p => new
+            {
+                p.Id,
+                p.BaseUnit,
+                p.PackageSize,
+            })
+            .ToDictionaryAsync(p => p.Id, ct);
+
+        foreach (var line in lines)
         {
-            await db.SaveChangesAsync(ct);
+            if (
+                line.Item.ProductId is { } productId
+                && products.TryGetValue(productId, out var product)
+            )
+            {
+                line.Item.QuantityBase = ToBaseQuantity(
+                    line.Source.Quantity,
+                    line.Source.Unit,
+                    product.BaseUnit,
+                    product.PackageSize
+                );
+            }
         }
     }
+
+    // Weighed goods carry their unit; everything else counts packages.
+    internal static decimal ToBaseQuantity(
+        decimal quantity,
+        string? unit,
+        BaseUnit baseUnit,
+        decimal packageSize
+    ) => UnitConversion.ToBase(quantity, unit, baseUnit) ?? quantity * packageSize;
 
     private static async Task<(int Matched, int Unmatched)> CountMatchesAsync(
         HomeBaseDbContext db,
@@ -320,7 +269,7 @@ public sealed class ReceiptIngestService(IDbContextFactory<HomeBaseDbContext> fa
         return (matched, lines.Count - matched);
     }
 
-    private sealed record BuiltLine(PurchaseItem Item, int? ParentIndex)
+    private sealed record BuiltLine(PurchaseItem Item, ReceiptItem Source, int? ParentIndex)
     {
         public bool NeedsReview =>
             Item.LineType == PurchaseLineType.Item && Item.ProductId is null;

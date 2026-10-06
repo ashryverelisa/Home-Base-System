@@ -4,6 +4,7 @@ using HomeBase.Features.Catalog;
 using HomeBase.Features.Common;
 using HomeBase.Features.Ingest;
 using HomeBase.Features.Inventory;
+using HomeBase.Features.Matching;
 using HomeBase.Features.MealPlan;
 using HomeBase.Features.Purchases;
 using HomeBase.Features.Shopping;

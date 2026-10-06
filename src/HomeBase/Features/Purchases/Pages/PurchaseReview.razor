@@ -97,7 +97,7 @@ else
 
                         <MudButton Variant="Variant.Filled"
                                    Color="Color.Primary"
-                                   Disabled="@(_busy || Pick(line) is null)"
+                                   Disabled="@(_busy.IsBusy || Pick(line) is null)"
                                    OnClick="@(() => AssignAsync(line))">
                             @Localizer["Review.Assign"]
                         </MudButton>
@@ -106,7 +106,7 @@ else
                         {
                             <MudButton Variant="Variant.Outlined"
                                        Color="Color.Primary"
-                                       Disabled="_busy"
+                                       Disabled="_busy.IsBusy"
                                        OnClick="@(() => AssignSuggestionAsync(line, suggestedId))">
                                 @Localizer["Review.TakeSuggestion", suggestedName]
                             </MudButton>
@@ -122,7 +122,7 @@ else
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Size="Size.Large"
-                   Disabled="@(_busy || _openCount > 0 || _confirmed)"
+                   Disabled="@(_busy.IsBusy || _openCount > 0 || _confirmed)"
                    StartIcon="@Icons.Material.Filled.CheckCircle"
                    OnClick="@ConfirmAsync">
             @Localizer["Review.Confirm"]

@@ -68,7 +68,7 @@
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        FullWidth="true"
-                       Disabled="_busy"
+                       Disabled="_busy.IsBusy"
                        OnClick="@AddEntryAsync">
                 @Localizer["Plan.Add"]
             </MudButton>
@@ -131,7 +131,7 @@ else
                                     <MudButton Size="Size.Small"
                                                Variant="Variant.Filled"
                                                Color="Color.Primary"
-                                               Disabled="_busy"
+                                               Disabled="_busy.IsBusy"
                                                OnClick="@(() => BeginCookAsync(entry))">
                                         @Localizer["Plan.Cook"]
                                     </MudButton>
@@ -141,7 +141,7 @@ else
                                     <MudButton Size="Size.Small"
                                                Variant="Variant.Outlined"
                                                Color="Color.Default"
-                                               Disabled="_busy"
+                                               Disabled="_busy.IsBusy"
                                                OnClick="@(() => SkipAsync(entry))">
                                         @Localizer["Plan.Skip"]
                                     </MudButton>
@@ -196,7 +196,7 @@ else
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 <MudButton Variant="Variant.Filled"
                                            Color="Color.Primary"
-                                           Disabled="_busy"
+                                           Disabled="_busy.IsBusy"
                                            OnClick="@ConfirmCookAsync">
                                     @Localizer["Plan.ConfirmCook"]
                                 </MudButton>
@@ -258,7 +258,7 @@ else
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Size="Size.Large"
-                   Disabled="_busy"
+                   Disabled="_busy.IsBusy"
                    StartIcon="@Icons.Material.Filled.PlaylistAdd"
                    OnClick="@ApplyToListAsync">
             @Localizer["Plan.ToShoppingList"]

@@ -2,7 +2,8 @@ using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Queries;
 using HomeBase.Features.Catalog;
-using HomeBase.Features.Ingest;
+using HomeBase.Features.Common;
+using HomeBase.Features.Matching;
 using HomeBase.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -35,7 +36,7 @@ public sealed class RecipeService(
         return await db.Recipes.WithIngredients().FirstOrDefaultAsync(r => r.Id == id, ct);
     }
 
-    public async Task<IReadOnlyList<IngredientLine>> GetIngredientsAsync(
+    public async Task<IReadOnlyList<RecipeIngredientRow>> GetIngredientsAsync(
         int recipeId,
         CancellationToken ct = default
     )
@@ -45,30 +46,20 @@ public sealed class RecipeService(
         return await db
             .RecipeIngredients.ForRecipe(recipeId)
             .InRecipeOrder()
-            .Select(i => new IngredientLine(
-                i.Id,
-                i.ProductId,
-                i.Product!.Name,
-                i.FreeText,
-                i.Product!.BaseUnit,
-                i.QuantityBase,
-                i.IsOptional,
-                i.Note,
-                i.NeedsReview
-            ))
+            .Select(RecipeIngredientRow.Projection)
             .ToListAsync(ct);
     }
 
-    public async Task<RecipeSaveResult> SaveAsync(Recipe recipe, CancellationToken ct = default)
+    public async Task<SaveResult<int>> SaveAsync(Recipe recipe, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(recipe.Name))
         {
-            return RecipeSaveResult.Failed(localizer["Recipes.NameRequired"]);
+            return SaveResult.Failed<int>(localizer["Recipes.NameRequired"]);
         }
 
         if (recipe.Servings <= 0)
         {
-            return RecipeSaveResult.Failed(localizer["Recipes.ServingsRequired"]);
+            return SaveResult.Failed<int>(localizer["Recipes.ServingsRequired"]);
         }
 
         recipe.Name = recipe.Name.Trim();
@@ -86,7 +77,7 @@ public sealed class RecipeService(
 
         await db.SaveChangesAsync(ct);
 
-        return RecipeSaveResult.Ok(recipe.Id);
+        return SaveResult.Ok(recipe.Id);
     }
 
     public async Task DeleteAsync(int recipeId, CancellationToken ct = default)
@@ -117,10 +108,10 @@ public sealed class RecipeService(
         {
             RecipeId = recipeId,
             ProductId = productId,
-            FreeText = string.IsNullOrWhiteSpace(freeText) ? null : freeText.Trim(),
+            FreeText = freeText.TrimToNull(),
             QuantityBase = quantityBase,
             IsOptional = isOptional,
-            Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+            Note = note.TrimToNull(),
             SortOrder = (nextOrder ?? 0) + 1,
         };
 
@@ -156,7 +147,7 @@ public sealed class RecipeService(
         foreach (var ingredient in open)
         {
             var text = ingredient.FreeText ?? string.Empty;
-            var name = ParseName(text);
+            var name = IngredientParser.Parse(text).Name;
 
             // Re-run the matcher: aliases learned since the import may already know this line.
             var match = await ProductMatcher.MatchAsync(db, null, null, name, ct);
@@ -200,10 +191,10 @@ public sealed class RecipeService(
             return false;
         }
 
-        var parsed = RecipeIngestService.Parse(Request(ingredient.FreeText));
+        var parsed = IngredientParser.Parse(ingredient.FreeText);
 
         ingredient.ProductId = productId;
-        ingredient.QuantityBase = await RecipeIngestService.ToBaseQuantityAsync(
+        ingredient.QuantityBase = await IngredientParser.ToBaseQuantityAsync(
             db,
             productId,
             parsed.Quantity,
@@ -229,9 +220,4 @@ public sealed class RecipeService(
             .RecipeIngredients.Where(i => i.Id == ingredientId)
             .ExecuteUpdateAsync(s => s.SetProperty(i => i.NeedsReview, false), ct);
     }
-
-    private static string ParseName(string text) => RecipeIngestService.Parse(Request(text)).Name;
-
-    private static RecipeIngredientRequest Request(string? text) =>
-        new(text, null, null, null, null, null);
 }

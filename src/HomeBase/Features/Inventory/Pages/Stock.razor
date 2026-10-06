@@ -126,13 +126,13 @@ else
                                              Style="max-width: 14rem"/>
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
-                                       Disabled="_busy"
+                                       Disabled="_busy.IsBusy"
                                        OnClick="@ApplyAsync">
                                 @Localizer["Stock.Book"]
                             </MudButton>
                             <MudButton Variant="Variant.Outlined"
                                        Color="Color.Primary"
-                                       Disabled="_busy"
+                                       Disabled="_busy.IsBusy"
                                        OnClick="@ApplyAllAsync">
                                 @Localizer["Stock.BookAll", Units.Format(lot.QuantityBase, lot.BaseUnit)]
                             </MudButton>
@@ -178,7 +178,7 @@ else
                             }
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
-                                       Disabled="_busy"
+                                       Disabled="_busy.IsBusy"
                                        OnClick="@MoveAsync">
                                 @Localizer["Stock.Move"]
                             </MudButton>

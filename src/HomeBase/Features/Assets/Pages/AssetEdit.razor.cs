@@ -1,3 +1,4 @@
+using HomeBase.Components.Shared;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using Microsoft.AspNetCore.Components;
@@ -19,7 +20,7 @@ public sealed partial class AssetEdit
     private string _attributeValue = string.Empty;
     private string? _uploadError;
     private string? _error;
-    private bool _busy;
+    private readonly BusyState _busy = new();
 
     [Parameter]
     public int Id { get; set; }
@@ -89,10 +90,9 @@ public sealed partial class AssetEdit
             return;
         }
 
-        _busy = true;
         _error = null;
 
-        try
+        await _busy.RunAsync(async () =>
         {
             var result = await Equipment.SaveAsync(_asset);
 
@@ -102,12 +102,8 @@ public sealed partial class AssetEdit
                 return;
             }
 
-            Navigation.NavigateTo(Id == 0 ? $"/assets/{result.AssetId}" : "/assets");
-        }
-        finally
-        {
-            _busy = false;
-        }
+            Navigation.NavigateTo(Id == 0 ? $"/assets/{result.Id}" : "/assets");
+        });
     }
 
     private async Task CompleteServiceAsync()
@@ -127,10 +123,9 @@ public sealed partial class AssetEdit
             return;
         }
 
-        _busy = true;
         _uploadError = null;
 
-        try
+        await _busy.RunAsync(async () =>
         {
             if (file.Size > AssetDocumentStore.MaximumFileSize)
             {
@@ -147,11 +142,7 @@ public sealed partial class AssetEdit
             await Equipment.AddDocumentAsync(Id, _documentType, file.Name, stream);
 
             _documents = await Equipment.GetDocumentsAsync(Id);
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task DeleteDocumentAsync(AssetDocumentRow document)

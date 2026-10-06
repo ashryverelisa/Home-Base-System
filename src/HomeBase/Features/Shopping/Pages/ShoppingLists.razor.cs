@@ -1,3 +1,4 @@
+using HomeBase.Components.Shared;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
 using HomeBase.Features.Common;
@@ -21,7 +22,7 @@ public sealed partial class ShoppingLists
     private int _listId;
     private bool _showSettled;
     private string? _error;
-    private bool _busy;
+    private readonly BusyState _busy = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -74,10 +75,9 @@ public sealed partial class ShoppingLists
 
     private async Task AddAsync()
     {
-        _busy = true;
         _error = null;
 
-        try
+        await _busy.RunAsync(async () =>
         {
             var price = TracksPrices ? _price : null;
             var priority = TracksPrices ? _priority : ShoppingPriority.Normal;
@@ -109,11 +109,7 @@ public sealed partial class ShoppingLists
             _priority = ShoppingPriority.Normal;
 
             await LoadItemsAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task BuyAsync(ShoppingItemRow item)

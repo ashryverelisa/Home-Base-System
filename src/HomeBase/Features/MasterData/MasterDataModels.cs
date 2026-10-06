@@ -48,10 +48,3 @@ public sealed record ShoppingListAdminRow(
     bool Archived,
     int OpenCount
 );
-
-public sealed record MasterDataResult(bool Succeeded, string? Error)
-{
-    public static readonly MasterDataResult Ok = new(true, null);
-
-    public static MasterDataResult Failed(string error) => new(false, error);
-}

@@ -1,5 +1,6 @@
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
+using HomeBase.Features.Common;
 using HomeBase.Features.Ingest;
 using HomeBase.Features.Inventory;
 using HomeBase.Features.Purchases;
@@ -22,9 +23,6 @@ public class IngestEndpointsTests
 
     private static PurchaseRow Purchase(long id, PurchaseStatus status) =>
         new(id, DateTimeOffset.UnixEpoch, null, "Rewe", 12.5m, PurchaseSource.N8nReceipt, status);
-
-    private static PurchaseLineRow Line(PurchaseLineType type, int? productId) =>
-        new(1, 1, type, productId, null, null, null, 1m, null, 1m, null, false);
 
     private static ProductRow Product(int id, string gtin) =>
         new(id, "Milch", null, null, BaseUnit.Milliliter, 1000m, true, gtin, null);
@@ -86,17 +84,14 @@ public class IngestEndpointsTests
     }
 
     [Fact]
-    public async Task GetReceipts_StatusFilter_SkipsOtherPurchasesAndCountsUnmatchedItems()
+    public async Task GetReceipts_StatusFilter_SkipsOtherPurchasesAndReportsLineCounts()
     {
         var purchases = Substitute.For<IPurchaseService>();
         purchases.GetPendingAsync(Arg.Any<CancellationToken>())
-            .Returns([Purchase(1, PurchaseStatus.NeedsReview), Purchase(2, PurchaseStatus.Draft)]);
-        purchases.GetLinesAsync(1, Arg.Any<CancellationToken>())
             .Returns(
                 [
-                    Line(PurchaseLineType.Item, productId: 5),
-                    Line(PurchaseLineType.Item, productId: null),
-                    Line(PurchaseLineType.Discount, productId: null),
+                    Purchase(1, PurchaseStatus.NeedsReview) with { LineCount = 3, UnmatchedCount = 1 },
+                    Purchase(2, PurchaseStatus.Draft) with { LineCount = 2 },
                 ]
             );
 
@@ -106,7 +101,9 @@ public class IngestEndpointsTests
         Assert.Equal(1, summary.PurchaseId);
         Assert.Equal(3, summary.Lines);
         Assert.Equal(1, summary.Unmatched);
-        await purchases.DidNotReceive().GetLinesAsync(2, Arg.Any<CancellationToken>());
+        await purchases
+            .DidNotReceive()
+            .GetLinesAsync(Arg.Any<long>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -136,22 +133,26 @@ public class IngestEndpointsTests
     }
 
     [Fact]
-    public async Task GetProducts_ByGtin_ReturnsExactMatchOnly()
+    public async Task GetProducts_ByGtin_ReturnsTheMatchingProduct()
     {
         var catalog = Substitute.For<ICatalogService>();
-        catalog.SearchAsync("4001", Arg.Any<CancellationToken>())
-            .Returns([Product(1, "40012"), Product(2, "4001")]);
+        catalog.FindRowByGtinAsync("4001", Arg.Any<CancellationToken>())
+            .Returns(Product(2, "4001") with { StockBase = 500m });
 
         var result = await IngestEndpoints.GetProductsAsync(null, "4001", catalog, Ct);
 
-        Assert.Equal(2, Assert.IsType<Ok<ProductSummary>>(result).Value?.Id);
+        var summary = Assert.IsType<Ok<ProductSummary>>(result).Value;
+        Assert.Equal(2, summary?.Id);
+        Assert.Equal(500m, summary?.StockBase);
+        await catalog.DidNotReceive().SearchAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task GetProducts_ByUnknownGtin_ReturnsNotFound()
     {
         var catalog = Substitute.For<ICatalogService>();
-        catalog.SearchAsync("4001", Arg.Any<CancellationToken>()).Returns([Product(1, "40012")]);
+        catalog.FindRowByGtinAsync("4001", Arg.Any<CancellationToken>())
+            .Returns((ProductRow?)null);
 
         var result = await IngestEndpoints.GetProductsAsync(null, "4001", catalog, Ct);
 
@@ -163,7 +164,7 @@ public class IngestEndpointsTests
     {
         var shopping = Substitute.For<IShoppingService>();
         shopping.AddProductAsync(Arg.Any<AddProductRequest>(), Arg.Any<CancellationToken>())
-            .Returns(ShoppingSaveResult.Ok(99));
+            .Returns(SaveResult.Ok(99L));
 
         var result = await IngestEndpoints.PostShoppingItemAsync(
             3,
@@ -189,7 +190,7 @@ public class IngestEndpointsTests
     {
         var shopping = Substitute.For<IShoppingService>();
         shopping.AddFreeTextAsync(Arg.Any<AddFreeTextRequest>(), Arg.Any<CancellationToken>())
-            .Returns(ShoppingSaveResult.Ok(99));
+            .Returns(SaveResult.Ok(99L));
 
         await IngestEndpoints.PostShoppingItemAsync(
             3,
@@ -227,7 +228,7 @@ public class IngestEndpointsTests
     {
         var shopping = Substitute.For<IShoppingService>();
         shopping.AddProductAsync(Arg.Any<AddProductRequest>(), Arg.Any<CancellationToken>())
-            .Returns(ShoppingSaveResult.Failed("Unknown product."));
+            .Returns(SaveResult.Failed<long>("Unknown product."));
 
         var result = await IngestEndpoints.PostShoppingItemAsync(
             3,

@@ -2,16 +2,9 @@ using System.Globalization;
 using HomeBase.Components;
 using HomeBase.Data;
 using HomeBase.Database;
-using HomeBase.Features.Analytics;
+using HomeBase.Features;
 using HomeBase.Features.Assets;
-using HomeBase.Features.Catalog;
 using HomeBase.Features.Ingest;
-using HomeBase.Features.MasterData;
-using HomeBase.Features.Inventory;
-using HomeBase.Features.MealPlan;
-using HomeBase.Features.Purchases;
-using HomeBase.Features.Recipes;
-using HomeBase.Features.Shopping;
 using HomeBase.Localization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
@@ -46,29 +39,9 @@ builder.Services.AddDbContextFactory<HomeBaseDbContext>(options =>
     options.UseNpgsql(connectionString)
 );
 
-builder.Services.AddSingleton<IAssetDocumentStore, AssetDocumentStore>();
-
-builder.Services.AddScoped<IAssetService, AssetService>();
-builder.Services.AddScoped<ICatalogService, CatalogService>();
-builder.Services.AddScoped<IInventoryService, InventoryService>();
-builder.Services.AddScoped<IShoppingService, ShoppingService>();
-builder.Services.AddScoped<IPurchaseService, PurchaseService>();
-builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
-builder.Services.AddScoped<IReviewService, ReviewService>();
-builder.Services.AddScoped<IReceiptIngestService, ReceiptIngestService>();
-builder.Services.AddScoped<IRecipeService, RecipeService>();
-builder.Services.AddScoped<IRecipeIngestService, RecipeIngestService>();
-builder.Services.AddScoped<IMealPlanService, MealPlanService>();
-builder.Services.AddScoped<IMasterDataService, MasterDataService>();
-
-builder.Services.AddHttpClient<IOpenFoodFacts, OpenFoodFactsClient>(client =>
-{
-    client.BaseAddress = new Uri("https://world.openfoodfacts.org/");
-    client.Timeout = TimeSpan.FromSeconds(5);
-    client.DefaultRequestHeaders.UserAgent.ParseAdd(
-        "HomeBase/1.0 (+https://github.com/ashryverelisa/Home-Base-System)"
-    );
-});
+// Hosted services start in registration order: migrate before the features' background jobs run.
+builder.Services.AddHostedService<DatabaseInitializer>();
+builder.Services.AddHomeBaseFeatures();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -83,9 +56,6 @@ builder.Services.AddRateLimiter(options =>
         }
     );
 });
-
-builder.Services.AddHostedService<DatabaseInitializer>();
-builder.Services.AddHostedService<AutoRestockService>();
 
 var app = builder.Build();
 

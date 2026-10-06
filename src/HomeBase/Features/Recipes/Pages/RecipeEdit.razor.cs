@@ -1,3 +1,4 @@
+using HomeBase.Components.Shared;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
@@ -8,7 +9,7 @@ namespace HomeBase.Features.Recipes.Pages;
 public sealed partial class RecipeEdit
 {
     private Recipe? _recipe;
-    private IReadOnlyList<IngredientLine> _ingredients = [];
+    private IReadOnlyList<RecipeIngredientRow> _ingredients = [];
     private IReadOnlyList<IngredientReview> _reviews = [];
     private readonly Dictionary<int, ProductRow?> _choices = [];
     private ProductRow? _picked;
@@ -17,7 +18,7 @@ public sealed partial class RecipeEdit
     private decimal? _quantity;
     private bool _optional;
     private string? _error;
-    private bool _busy;
+    private readonly BusyState _busy = new();
 
     [Parameter]
     public int Id { get; set; }
@@ -62,32 +63,20 @@ public sealed partial class RecipeEdit
             return;
         }
 
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             await Recipes.AssignIngredientAsync(review.IngredientId, product.Id);
             await LoadIngredientsAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task KeepAsTextAsync(IngredientReview review)
     {
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             await Recipes.KeepAsTextAsync(review.IngredientId);
             await LoadIngredientsAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task<IEnumerable<ProductRow>> SearchProductsAsync(
@@ -108,10 +97,9 @@ public sealed partial class RecipeEdit
             return;
         }
 
-        _busy = true;
         _error = null;
 
-        try
+        await _busy.RunAsync(async () =>
         {
             _recipe.Tags = RecipeTags.Parse(_tagInput);
 
@@ -123,12 +111,8 @@ public sealed partial class RecipeEdit
                 return;
             }
 
-            Navigation.NavigateTo(Id == 0 ? $"/recipes/{result.RecipeId}" : "/recipes");
-        }
-        finally
-        {
-            _busy = false;
-        }
+            Navigation.NavigateTo(Id == 0 ? $"/recipes/{result.Id}" : "/recipes");
+        });
     }
 
     private async Task AddIngredientAsync()
@@ -154,7 +138,7 @@ public sealed partial class RecipeEdit
         await LoadIngredientsAsync();
     }
 
-    private async Task RemoveIngredientAsync(IngredientLine ingredient)
+    private async Task RemoveIngredientAsync(RecipeIngredientRow ingredient)
     {
         await Recipes.RemoveIngredientAsync(ingredient.Id);
 

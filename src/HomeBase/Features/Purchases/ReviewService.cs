@@ -1,7 +1,7 @@
 using HomeBase.Database;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
-using HomeBase.Features.Ingest;
+using HomeBase.Features.Matching;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Purchases;

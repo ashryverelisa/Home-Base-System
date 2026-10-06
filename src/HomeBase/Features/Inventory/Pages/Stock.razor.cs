@@ -1,4 +1,5 @@
-﻿using HomeBase.Database.Entities;
+﻿using HomeBase.Components.Shared;
+using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Common;
 using MudBlazor;
@@ -13,7 +14,7 @@ public partial class Stock
     private StockMovementType _activeType = StockMovementType.Consume;
     private decimal _amount;
     private string? _message;
-    private bool _busy;
+    private readonly BusyState _busy = new();
     private IReadOnlyList<StorageLocation> _locations = [];
     private StockLotView? _moving;
     private int? _moveLocationId;
@@ -71,9 +72,7 @@ public partial class Stock
             return;
         }
 
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             await Inventory.MoveLotAsync(
                 new LotMove(_moving.LotId, _moveLocationId, MoveChangesShelfLife, _moveBestBefore)
@@ -81,11 +80,7 @@ public partial class Stock
 
             _moving = null;
             await LoadAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private void Begin(StockLotView lot, StockMovementType type)
@@ -115,10 +110,9 @@ public partial class Stock
             return;
         }
 
-        _busy = true;
         _message = null;
 
-        try
+        await _busy.RunAsync(async () =>
         {
             var result = await Inventory.TakeFromLotAsync(_active.LotId, quantity, _activeType);
 
@@ -133,11 +127,7 @@ public partial class Stock
 
             _active = null;
             await LoadAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task OpenAsync(StockLotView lot)

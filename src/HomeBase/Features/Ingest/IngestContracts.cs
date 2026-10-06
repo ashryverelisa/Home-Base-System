@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HomeBase.Features.Catalog;
 
 namespace HomeBase.Features.Ingest;
 
@@ -64,7 +65,19 @@ public sealed record ProductSummary(
     string BaseUnit,
     decimal PackageSize,
     decimal StockBase
-);
+)
+{
+    public static ProductSummary From(ProductRow row) =>
+        new(
+            row.Id,
+            row.Name,
+            row.Brand,
+            row.Gtin,
+            row.BaseUnit.ToString(),
+            row.PackageSize,
+            row.StockBase
+        );
+}
 
 public sealed record LowStockResponse(
     int ProductId,

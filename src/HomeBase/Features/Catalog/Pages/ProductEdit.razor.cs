@@ -141,7 +141,7 @@ public partial class ProductEdit
                 ? "/products"
                 : Navigation.GetUriWithQueryParameters(
                     BackHref,
-                    new Dictionary<string, object?> { ["productId"] = result.ProductId }
+                    new Dictionary<string, object?> { ["productId"] = result.Id }
                 )
         );
     }

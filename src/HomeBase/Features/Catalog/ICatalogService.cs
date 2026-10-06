@@ -1,4 +1,5 @@
 using HomeBase.Database.Entities;
+using HomeBase.Features.Common;
 
 namespace HomeBase.Features.Catalog;
 
@@ -10,7 +11,9 @@ public interface ICatalogService
 
     Task<Product?> FindByGtinAsync(string gtin, CancellationToken ct = default);
 
-    Task<ProductSaveResult> SaveAsync(Product product, CancellationToken ct = default);
+    Task<ProductRow?> FindRowByGtinAsync(string gtin, CancellationToken ct = default);
+
+    Task<SaveResult<int>> SaveAsync(Product product, CancellationToken ct = default);
 
     Task LearnShelfLifeAsync(int productId, int days, CancellationToken ct = default);
 

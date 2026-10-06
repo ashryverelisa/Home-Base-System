@@ -12,7 +12,8 @@ namespace HomeBase.Features.Purchases;
 
 public sealed class PurchaseService(
     IDbContextFactory<HomeBaseDbContext> factory,
-    IStringLocalizer<AppStrings> localizer
+    IStringLocalizer<AppStrings> localizer,
+    TimeProvider time
 ) : IPurchaseService
 {
     public async Task<IReadOnlyList<PurchaseRow>> GetPurchasesAsync(
@@ -28,9 +29,7 @@ public sealed class PurchaseService(
             .Select(PurchaseRow.Projection)
             .ToListAsync(ct);
 
-        var counts = await db.PurchaseItems.LineCountsByPurchaseAsync(ct);
-
-        return [.. rows.Select(r => r with { LineCount = counts.GetValueOrDefault(r.Id) })];
+        return await WithLineCountsAsync(db, rows, ct);
     }
 
     public async Task<IReadOnlyList<PurchaseRow>> GetPendingAsync(CancellationToken ct = default)
@@ -43,9 +42,7 @@ public sealed class PurchaseService(
             .Select(PurchaseRow.Projection)
             .ToListAsync(ct);
 
-        var counts = await db.PurchaseItems.LineCountsByPurchaseAsync(ct);
-
-        return [.. rows.Select(r => r with { LineCount = counts.GetValueOrDefault(r.Id) })];
+        return await WithLineCountsAsync(db, rows, ct);
     }
 
     public async Task<PurchaseRow?> FindAsync(long id, CancellationToken ct = default)
@@ -79,26 +76,26 @@ public sealed class PurchaseService(
         return await db.Stores.InDisplayOrder().ToListAsync(ct);
     }
 
-    public async Task<PurchaseSaveResult> SaveAsync(
+    public async Task<SaveResult<long>> SaveAsync(
         PurchaseDraft draft,
         CancellationToken ct = default
     )
     {
         if (draft.Lines.Count == 0)
         {
-            return PurchaseSaveResult.Failed(localizer["Purchases.NoLines"]);
+            return SaveResult.Failed<long>(localizer["Purchases.NoLines"]);
         }
 
         if (draft.Lines.Any(l => l.IsItem && l.ProductId is null))
         {
-            return PurchaseSaveResult.Failed(localizer["Purchases.ProductRequired"]);
+            return SaveResult.Failed<long>(localizer["Purchases.ProductRequired"]);
         }
 
         var sum = draft.LineSum;
 
         if (draft.ReceiptTotal is { } receiptTotal && receiptTotal != sum)
         {
-            return PurchaseSaveResult.Failed(
+            return SaveResult.Failed<long>(
                 localizer["Purchases.TotalMismatch", Units.Money(sum), Units.Money(receiptTotal)]
             );
         }
@@ -108,12 +105,12 @@ public sealed class PurchaseService(
 
         var purchase = new Purchase
         {
-            StoreId = await ResolveStoreAsync(db, draft, ct),
+            StoreId =
+                draft.StoreId
+                ?? await StoreResolver.FindOrCreateAsync(db, draft.StoreName, taxId: null, ct),
             PurchasedAt = draft.PurchasedAt,
             Total = sum,
-            PaymentMethod = string.IsNullOrWhiteSpace(draft.PaymentMethod)
-                ? null
-                : draft.PaymentMethod.Trim(),
+            PaymentMethod = draft.PaymentMethod.TrimToNull(),
             Source = PurchaseSource.Manual,
             Status = PurchaseStatus.Confirmed,
         };
@@ -126,7 +123,18 @@ public sealed class PurchaseService(
         db.Purchases.Add(purchase);
         await db.SaveChangesAsync(ct);
 
-        await LinkDiscountLinesAsync(db, purchase, draft, ct);
+        await DiscountLinker.LinkAsync(
+            db,
+            purchase.Items,
+            [
+                .. draft.Lines.Select(line =>
+                    line is { LineType: PurchaseLineType.Discount, ParentIndex: { } parent }
+                        ? parent
+                        : (int?)null
+                ),
+            ],
+            ct
+        );
 
         if (draft.BookIntoStock)
         {
@@ -139,7 +147,7 @@ public sealed class PurchaseService(
 
         await transaction.CommitAsync(ct);
 
-        return PurchaseSaveResult.Ok(purchase.Id);
+        return SaveResult.Ok(purchase.Id);
     }
 
     public async Task<bool> ConfirmAsync(long purchaseId, CancellationToken ct = default)
@@ -174,7 +182,7 @@ public sealed class PurchaseService(
             LineNo = lineNo,
             LineType = line.LineType,
             ProductId = line.IsItem ? line.ProductId : null,
-            RawText = string.IsNullOrWhiteSpace(line.RawText) ? null : line.RawText.Trim(),
+            RawText = line.RawText.TrimToNull(),
             Quantity = quantity,
             QuantityBase = line.IsItem ? line.QuantityBase : null,
             UnitPrice = quantity == 0 ? null : total / quantity,
@@ -187,70 +195,30 @@ public sealed class PurchaseService(
         };
     }
 
-    private static async Task<int?> ResolveStoreAsync(
+    private static async Task<IReadOnlyList<PurchaseRow>> WithLineCountsAsync(
         HomeBaseDbContext db,
-        PurchaseDraft draft,
+        List<PurchaseRow> rows,
         CancellationToken ct
     )
     {
-        if (draft.StoreId is { } id)
+        if (rows.Count == 0)
         {
-            return id;
+            return rows;
         }
 
-        if (string.IsNullOrWhiteSpace(draft.StoreName))
-        {
-            return null;
-        }
+        var counts = await db.PurchaseItems.LineCountsAsync([.. rows.Select(r => r.Id)], ct);
 
-        var name = draft.StoreName.Trim();
-        var existing = await db.Stores.ByNameAsync(name, ct);
-
-        if (existing is not null)
-        {
-            return existing.Id;
-        }
-
-        var store = new Store { Name = name };
-
-        db.Stores.Add(store);
-        await db.SaveChangesAsync(ct);
-
-        return store.Id;
+        return
+        [
+            .. rows.Select(r =>
+                counts.TryGetValue(r.Id, out var count)
+                    ? r with { LineCount = count.Lines, UnmatchedCount = count.Unmatched }
+                    : r
+            ),
+        ];
     }
 
-    private static async Task LinkDiscountLinesAsync(
-        HomeBaseDbContext db,
-        Purchase purchase,
-        PurchaseDraft draft,
-        CancellationToken ct
-    )
-    {
-        var linked = false;
-
-        for (var index = 0; index < draft.Lines.Count; index++)
-        {
-            if (
-                draft.Lines[index]
-                    is not { LineType: PurchaseLineType.Discount, ParentIndex: { } parentIndex }
-                || parentIndex < 0
-                || parentIndex >= draft.Lines.Count
-            )
-            {
-                continue;
-            }
-
-            purchase.Items[index].ParentItemId = purchase.Items[parentIndex].Id;
-            linked = true;
-        }
-
-        if (linked)
-        {
-            await db.SaveChangesAsync(ct);
-        }
-    }
-
-    private static async Task BookPurchaseAsync(
+    private async Task BookPurchaseAsync(
         HomeBaseDbContext db,
         long purchaseId,
         IReadOnlyDictionary<long, DateOnly?>? bestBefore,
@@ -275,11 +243,11 @@ public sealed class PurchaseService(
             return;
         }
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = time.Today();
 
         foreach (var line in lines)
         {
-            InventoryService.AddLot(
+            StockLedger.AddLot(
                 db,
                 new BookInRequest(
                     line.ProductId,
@@ -303,22 +271,26 @@ public sealed class PurchaseService(
         }
     }
 
-    private static async Task SettleShoppingItemsAsync(
+    private async Task SettleShoppingItemsAsync(
         HomeBaseDbContext db,
         int productId,
         long purchaseItemId,
         CancellationToken ct
-    ) =>
+    )
+    {
+        var boughtAt = time.GetUtcNow();
+
         await db
             .ShoppingListItems.Open()
             .Where(i => i.ProductId == productId)
             .ExecuteUpdateAsync(
                 s =>
                     s.SetProperty(i => i.Status, ShoppingListItemStatus.Bought)
-                        .SetProperty(i => i.BoughtAt, DateTimeOffset.UtcNow)
+                        .SetProperty(i => i.BoughtAt, boughtAt)
                         .SetProperty(i => i.PurchaseItemId, purchaseItemId),
                 ct
             );
+    }
 
     private sealed record BookableLine(
         long Id,

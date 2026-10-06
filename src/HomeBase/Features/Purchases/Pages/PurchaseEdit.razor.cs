@@ -1,3 +1,4 @@
+using HomeBase.Components.Shared;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
@@ -22,7 +23,7 @@ public sealed partial class PurchaseEdit
     private ProductRow? _picked;
     private string? _lineError;
     private string? _error;
-    private bool _busy;
+    private readonly BusyState _busy = new();
 
     private DateTime? PurchasedDate
     {
@@ -137,10 +138,9 @@ public sealed partial class PurchaseEdit
 
     private async Task SaveAsync()
     {
-        _busy = true;
         _error = null;
 
-        try
+        await _busy.RunAsync(async () =>
         {
             var result = await Purchases.SaveAsync(_draft);
 
@@ -150,11 +150,7 @@ public sealed partial class PurchaseEdit
                 return;
             }
 
-            Navigation.NavigateTo($"/purchases/{result.PurchaseId}");
-        }
-        finally
-        {
-            _busy = false;
-        }
+            Navigation.NavigateTo($"/purchases/{result.Id}");
+        });
     }
 }

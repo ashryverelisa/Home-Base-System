@@ -1,3 +1,5 @@
+using HomeBase.Components.Shared;
+using HomeBase.Features.Common;
 using HomeBase.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -7,6 +9,8 @@ namespace HomeBase.Features.MasterData.Pages;
 
 public abstract class MasterDataTabBase : ComponentBase
 {
+    private readonly BusyState _busy = new();
+
     [Inject]
     protected IMasterDataService MasterData { get; set; } = null!;
 
@@ -18,7 +22,7 @@ public abstract class MasterDataTabBase : ComponentBase
 
     protected string? Error { get; set; }
 
-    protected bool Busy { get; private set; }
+    protected bool Busy => _busy.IsBusy;
 
     protected abstract Task LoadAsync();
 
@@ -32,11 +36,8 @@ public abstract class MasterDataTabBase : ComponentBase
         Error = null;
     }
 
-    protected async Task RunAsync(Func<Task<MasterDataResult>> action, bool closeEditor = true)
-    {
-        Busy = true;
-
-        try
+    protected Task RunAsync(Func<Task<SaveResult>> action, bool closeEditor = true) =>
+        _busy.RunAsync(async () =>
         {
             var result = await action();
 
@@ -52,12 +53,7 @@ public abstract class MasterDataTabBase : ComponentBase
             }
 
             await LoadAsync();
-        }
-        finally
-        {
-            Busy = false;
-        }
-    }
+        });
 
     protected async Task<bool> ConfirmDeleteAsync(string name) =>
         await Dialogs.ShowMessageBoxAsync(

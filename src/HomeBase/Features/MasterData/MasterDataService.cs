@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Queries;
+using HomeBase.Features.Common;
 using HomeBase.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -31,87 +33,32 @@ public sealed class MasterDataService(
         return TwoLevelTree.Ordered(rows);
     }
 
-    public async Task<MasterDataResult> SaveLocationAsync(
+    public Task<SaveResult> SaveLocationAsync(
         StorageLocation input,
         CancellationToken ct = default
-    )
-    {
-        var name = input.Name.Trim();
+    ) =>
+        SaveNodeAsync(
+            input,
+            db => db.StorageLocations,
+            name => new StorageLocation { Name = name },
+            location => location.Zone = input.Zone,
+            ct
+        );
 
-        if (name.Length == 0)
-        {
-            return Failed("MasterData.NameRequired");
-        }
-
-        await using var db = await factory.CreateDbContextAsync(ct);
-
-        if (!await CanAttachAsync(db.StorageLocations, input.Id, input.ParentId, ct))
-        {
-            return Failed("MasterData.InvalidParent");
-        }
-
-        if (
-            await db.StorageLocations.AnyAsync(
-                l => l.Id != input.Id && l.ParentId == input.ParentId && l.Name == name,
-                ct
-            )
-        )
-        {
-            return Failed("MasterData.NameTaken", name);
-        }
-
-        var location = input.Id == 0
-            ? db.StorageLocations.Add(new StorageLocation { Name = name }).Entity
-            : await db.StorageLocations.FindAsync([input.Id], ct);
-
-        if (location is null)
-        {
-            return Failed("MasterData.NotFound");
-        }
-
-        location.Name = name;
-        location.ParentId = input.ParentId;
-        location.Zone = input.Zone;
-
-        await db.SaveChangesAsync(ct);
-
-        return MasterDataResult.Ok;
-    }
-
-    public async Task<MasterDataResult> DeleteLocationAsync(int id, CancellationToken ct = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
-
-        var usage = await db
-            .StorageLocations.Where(l => l.Id == id)
-            .Select(l => new
-            {
-                Children = l.Children.Count,
-                Lots = db.StockLots.Count(s => s.LocationId == l.Id && s.QuantityBase > 0),
-                Assets = db.Assets.Count(a => a.LocationId == l.Id),
-            })
-            .FirstOrDefaultAsync(ct);
-
-        if (usage is null)
-        {
-            return Failed("MasterData.NotFound");
-        }
-
-        if (usage.Children > 0)
-        {
-            return Failed("MasterData.HasChildren");
-        }
-
-        if (usage.Lots > 0 || usage.Assets > 0)
-        {
-            return Failed("MasterData.LocationInUse", usage.Lots, usage.Assets);
-        }
-
-        // Empty lots and product defaults lose the reference via ON DELETE SET NULL.
-        await db.StorageLocations.Where(l => l.Id == id).ExecuteDeleteAsync(ct);
-
-        return MasterDataResult.Ok;
-    }
+    // Empty lots and product defaults lose the reference via ON DELETE SET NULL.
+    public Task<SaveResult> DeleteLocationAsync(int id, CancellationToken ct = default) =>
+        DeleteNodeAsync(
+            id,
+            db => db.StorageLocations,
+            db =>
+                l => new NodeUsage(
+                    l.Children.Count,
+                    db.StockLots.Count(s => s.LocationId == l.Id && s.QuantityBase > 0),
+                    db.Assets.Count(a => a.LocationId == l.Id)
+                ),
+            "MasterData.LocationInUse",
+            ct
+        );
 
     public async Task<IReadOnlyList<CategoryRow>> GetCategoriesAsync(CancellationToken ct = default)
     {
@@ -132,86 +79,28 @@ public sealed class MasterDataService(
         return TwoLevelTree.Ordered(rows);
     }
 
-    public async Task<MasterDataResult> SaveCategoryAsync(
-        Category input,
-        CancellationToken ct = default
-    )
-    {
-        var name = input.Name.Trim();
+    public Task<SaveResult> SaveCategoryAsync(Category input, CancellationToken ct = default) =>
+        SaveNodeAsync(
+            input,
+            db => db.Categories,
+            name => new Category { Name = name },
+            category => category.Kind = input.Kind,
+            ct
+        );
 
-        if (name.Length == 0)
-        {
-            return Failed("MasterData.NameRequired");
-        }
-
-        await using var db = await factory.CreateDbContextAsync(ct);
-
-        if (!await CanAttachAsync(db.Categories, input.Id, input.ParentId, ct))
-        {
-            return Failed("MasterData.InvalidParent");
-        }
-
-        if (
-            await db.Categories.AnyAsync(
-                c => c.Id != input.Id && c.ParentId == input.ParentId && c.Name == name,
-                ct
-            )
-        )
-        {
-            return Failed("MasterData.NameTaken", name);
-        }
-
-        var category = input.Id == 0
-            ? db.Categories.Add(new Category { Name = name }).Entity
-            : await db.Categories.FindAsync([input.Id], ct);
-
-        if (category is null)
-        {
-            return Failed("MasterData.NotFound");
-        }
-
-        category.Name = name;
-        category.ParentId = input.ParentId;
-        category.Kind = input.Kind;
-
-        await db.SaveChangesAsync(ct);
-
-        return MasterDataResult.Ok;
-    }
-
-    public async Task<MasterDataResult> DeleteCategoryAsync(int id, CancellationToken ct = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
-
-        var usage = await db
-            .Categories.Where(c => c.Id == id)
-            .Select(c => new
-            {
-                Children = c.Children.Count,
-                Products = db.Products.Count(p => p.CategoryId == c.Id),
-                Assets = db.Assets.Count(a => a.CategoryId == c.Id),
-            })
-            .FirstOrDefaultAsync(ct);
-
-        if (usage is null)
-        {
-            return Failed("MasterData.NotFound");
-        }
-
-        if (usage.Children > 0)
-        {
-            return Failed("MasterData.HasChildren");
-        }
-
-        if (usage.Products > 0 || usage.Assets > 0)
-        {
-            return Failed("MasterData.CategoryInUse", usage.Products, usage.Assets);
-        }
-
-        await db.Categories.Where(c => c.Id == id).ExecuteDeleteAsync(ct);
-
-        return MasterDataResult.Ok;
-    }
+    public Task<SaveResult> DeleteCategoryAsync(int id, CancellationToken ct = default) =>
+        DeleteNodeAsync(
+            id,
+            db => db.Categories,
+            db =>
+                c => new NodeUsage(
+                    c.Children.Count,
+                    db.Products.Count(p => p.CategoryId == c.Id),
+                    db.Assets.Count(a => a.CategoryId == c.Id)
+                ),
+            "MasterData.CategoryInUse",
+            ct
+        );
 
     public async Task<IReadOnlyList<StoreRow>> GetStoresAsync(CancellationToken ct = default)
     {
@@ -231,7 +120,7 @@ public sealed class MasterDataService(
             .ToListAsync(ct);
     }
 
-    public async Task<MasterDataResult> SaveStoreAsync(Store input, CancellationToken ct = default)
+    public async Task<SaveResult> SaveStoreAsync(Store input, CancellationToken ct = default)
     {
         var name = input.Name.Trim();
 
@@ -262,17 +151,17 @@ public sealed class MasterDataService(
         }
 
         store.Name = name;
-        store.Chain = Blank(input.Chain);
-        store.Address = Blank(input.Address);
+        store.Chain = input.Chain.TrimToNull();
+        store.Address = input.Address.TrimToNull();
         store.IsOnline = input.IsOnline;
-        store.TaxId = Blank(input.TaxId);
+        store.TaxId = input.TaxId.TrimToNull();
 
         await db.SaveChangesAsync(ct);
 
-        return MasterDataResult.Ok;
+        return SaveResult.Ok();
     }
 
-    public async Task<MasterDataResult> DeleteStoreAsync(int id, CancellationToken ct = default)
+    public async Task<SaveResult> DeleteStoreAsync(int id, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
@@ -286,7 +175,7 @@ public sealed class MasterDataService(
         // Store-specific aliases go with the store (ON DELETE CASCADE).
         await db.Stores.Where(s => s.Id == id).ExecuteDeleteAsync(ct);
 
-        return MasterDataResult.Ok;
+        return SaveResult.Ok();
     }
 
     public async Task<IReadOnlyList<ShoppingListAdminRow>> GetShoppingListsAsync(
@@ -313,7 +202,7 @@ public sealed class MasterDataService(
         return [.. rows.Select(r => r with { OpenCount = counts.GetValueOrDefault(r.Id) })];
     }
 
-    public async Task<MasterDataResult> SaveShoppingListAsync(
+    public async Task<SaveResult> SaveShoppingListAsync(
         ShoppingList input,
         CancellationToken ct = default
     )
@@ -355,10 +244,10 @@ public sealed class MasterDataService(
 
         await db.SaveChangesAsync(ct);
 
-        return MasterDataResult.Ok;
+        return SaveResult.Ok();
     }
 
-    public async Task<MasterDataResult> SetDefaultShoppingListAsync(
+    public async Task<SaveResult> SetDefaultShoppingListAsync(
         int id,
         CancellationToken ct = default
     )
@@ -384,10 +273,10 @@ public sealed class MasterDataService(
 
         await db.SaveChangesAsync(ct);
 
-        return MasterDataResult.Ok;
+        return SaveResult.Ok();
     }
 
-    public async Task<MasterDataResult> SetShoppingListArchivedAsync(
+    public async Task<SaveResult> SetShoppingListArchivedAsync(
         int id,
         bool archived,
         CancellationToken ct = default
@@ -409,7 +298,7 @@ public sealed class MasterDataService(
 
         await db.SaveChangesAsync(ct);
 
-        return MasterDataResult.Ok;
+        return SaveResult.Ok();
     }
 
     public async Task MoveShoppingListAsync(int id, int offset, CancellationToken ct = default)
@@ -427,13 +316,96 @@ public sealed class MasterDataService(
         await db.SaveChangesAsync(ct);
     }
 
+    private async Task<SaveResult> SaveNodeAsync<T>(
+        T input,
+        Func<HomeBaseDbContext, DbSet<T>> nodes,
+        Func<string, T> create,
+        Action<T> copyDetails,
+        CancellationToken ct
+    )
+        where T : class, ITreeNode
+    {
+        var name = input.Name.Trim();
+        var id = input.Id;
+        var parentId = input.ParentId;
+
+        if (name.Length == 0)
+        {
+            return Failed("MasterData.NameRequired");
+        }
+
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        var set = nodes(db);
+
+        if (!await CanAttachAsync(set, id, parentId, ct))
+        {
+            return Failed("MasterData.InvalidParent");
+        }
+
+        if (await set.AnyAsync(n => n.Id != id && n.ParentId == parentId && n.Name == name, ct))
+        {
+            return Failed("MasterData.NameTaken", name);
+        }
+
+        var node = id == 0 ? set.Add(create(name)).Entity : await set.FindAsync([id], ct);
+
+        if (node is null)
+        {
+            return Failed("MasterData.NotFound");
+        }
+
+        node.Name = name;
+        node.ParentId = parentId;
+        copyDetails(node);
+
+        await db.SaveChangesAsync(ct);
+
+        return SaveResult.Ok();
+    }
+
+    private async Task<SaveResult> DeleteNodeAsync<T>(
+        int id,
+        Func<HomeBaseDbContext, DbSet<T>> nodes,
+        Func<HomeBaseDbContext, Expression<Func<T, NodeUsage>>> usage,
+        string inUseKey,
+        CancellationToken ct
+    )
+        where T : class, ITreeNode
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        var set = nodes(db);
+
+        var found = await set.Where(n => n.Id == id).Select(usage(db)).FirstOrDefaultAsync(ct);
+
+        if (found is null)
+        {
+            return Failed("MasterData.NotFound");
+        }
+
+        if (found.Children > 0)
+        {
+            return Failed("MasterData.HasChildren");
+        }
+
+        if (found.First > 0 || found.Second > 0)
+        {
+            return Failed(inUseKey, found.First, found.Second);
+        }
+
+        await set.Where(n => n.Id == id).ExecuteDeleteAsync(ct);
+
+        return SaveResult.Ok();
+    }
+
     private static async Task<bool> CanAttachAsync<T>(
         IQueryable<T> nodes,
         int nodeId,
         int? parentId,
         CancellationToken ct
     )
-        where T : class
+        where T : class, ITreeNode
     {
         if (parentId is null)
         {
@@ -441,12 +413,8 @@ public sealed class MasterDataService(
         }
 
         var edges = await nodes
-            .Select(n => new
-            {
-                Id = EF.Property<int>(n, "Id"),
-                ParentId = EF.Property<int?>(n, "ParentId"),
-            })
             .Where(n => n.Id == parentId || n.ParentId == nodeId)
+            .Select(n => new { n.Id, n.ParentId })
             .ToListAsync(ct);
 
         var parent = edges.FirstOrDefault(e => e.Id == parentId);
@@ -456,9 +424,9 @@ public sealed class MasterDataService(
             && TwoLevelTree.CanAttach(nodeId, hasChildren, parentId, parent.ParentId);
     }
 
-    private static string? Blank(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private SaveResult Failed(string key, params object[] arguments) =>
+        SaveResult.Failed(localizer[key, arguments]);
 
-    private MasterDataResult Failed(string key, params object[] arguments) =>
-        MasterDataResult.Failed(localizer[key, arguments]);
+    // Children plus the two kinds of records that still point at a location or category.
+    private sealed record NodeUsage(int Children, int First, int Second);
 }

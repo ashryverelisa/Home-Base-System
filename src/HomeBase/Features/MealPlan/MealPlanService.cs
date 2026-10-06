@@ -2,12 +2,16 @@ using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
+using HomeBase.Features.Common;
 using HomeBase.Features.Inventory;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.MealPlan;
 
-public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory) : IMealPlanService
+public sealed class MealPlanService(
+    IDbContextFactory<HomeBaseDbContext> factory,
+    TimeProvider time
+) : IMealPlanService
 {
     public async Task<IReadOnlyList<MealPlanRow>> GetRangeAsync(
         DateOnly from,
@@ -44,7 +48,7 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
             FreeText = recipeId is null ? freeText?.Trim() : null,
             Servings = servings > 0 ? servings : 1,
             Status = status,
-            CookedAt = status == MealPlanStatus.Cooked ? DateTimeOffset.UtcNow : null,
+            CookedAt = status == MealPlanStatus.Cooked ? time.GetUtcNow() : null,
         };
 
         db.MealPlanEntries.Add(entry);
@@ -71,23 +75,22 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
         await SetStatusAsync(db, entryId, status, ct);
     }
 
-    private static async Task SetStatusAsync(
+    private async Task SetStatusAsync(
         HomeBaseDbContext db,
         long entryId,
         MealPlanStatus status,
         CancellationToken ct
-    ) =>
+    )
+    {
+        DateTimeOffset? cookedAt = status == MealPlanStatus.Cooked ? time.GetUtcNow() : null;
+
         await db
             .MealPlanEntries.Where(e => e.Id == entryId)
             .ExecuteUpdateAsync(
-                s =>
-                    s.SetProperty(e => e.Status, status)
-                        .SetProperty(
-                            e => e.CookedAt,
-                            status == MealPlanStatus.Cooked ? DateTimeOffset.UtcNow : null
-                        ),
+                s => s.SetProperty(e => e.Status, status).SetProperty(e => e.CookedAt, cookedAt),
                 ct
             );
+    }
 
     public async Task<CookPlan?> GetCookPlanAsync(long entryId, CancellationToken ct = default)
     {
@@ -139,7 +142,7 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
 
         foreach (var line in lines.Where(l => l.Needed > 0))
         {
-            var result = await InventoryService.TakeFromProductAsync(
+            var result = await StockLedger.TakeFromProductAsync(
                 db,
                 line.ProductId,
                 line.Needed,
@@ -163,13 +166,29 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
         return new CookResult(shortfalls.Count == 0, shortfalls);
     }
 
-    public async Task<decimal> GetCostAsync(long entryId, CancellationToken ct = default)
+    // What the stock booked out for each cooked meal cost when it was bought.
+    public async Task<IReadOnlyDictionary<long, decimal>> GetCostsAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken ct = default
+    )
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
+        var entryIds = db.MealPlanEntries.Between(from, to).Select(e => e.Id);
+
         return await db
-            .StockMovements.Where(m => m.MealPlanEntryId == entryId)
-            .SumAsync(m => -m.QuantityDelta * (m.Lot!.PurchaseItem!.PricePerBaseUnit ?? 0m), ct);
+            .StockMovements.Where(m =>
+                m.MealPlanEntryId != null && entryIds.Contains(m.MealPlanEntryId.Value)
+            )
+            .Select(m => new
+            {
+                EntryId = m.MealPlanEntryId!.Value,
+                Cost = -m.QuantityDelta * (m.Lot!.PurchaseItem!.PricePerBaseUnit ?? 0m),
+            })
+            .GroupBy(x => x.EntryId)
+            .Select(g => new { EntryId = g.Key, Cost = g.Sum(x => x.Cost) })
+            .ToDictionaryAsync(x => x.EntryId, x => x.Cost, ct);
     }
 
     public async Task<IReadOnlyList<NeedRow>> GetNeedsAsync(
@@ -244,38 +263,23 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
 
         foreach (var need in needs)
         {
-            if (need.ProductId is { } productId)
+            if (need.ProductId is not null && need.Missing <= 0)
             {
-                if (need.Missing <= 0)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                db.ShoppingListItems.Add(
-                    new ShoppingListItem
-                    {
-                        ListId = list.Id,
-                        ProductId = productId,
-                        Quantity = need.Missing,
-                        AddedBy = ShoppingListItemOrigin.MealPlan,
-                        PlanFrom = from,
-                        PlanTo = to,
-                    }
-                );
-            }
-            else
-            {
-                db.ShoppingListItems.Add(
-                    new ShoppingListItem
-                    {
-                        ListId = list.Id,
-                        FreeText = need.Label,
-                        AddedBy = ShoppingListItemOrigin.MealPlan,
-                        PlanFrom = from,
-                        PlanTo = to,
-                    }
-                );
-            }
+            db.ShoppingListItems.Add(
+                new ShoppingListItem
+                {
+                    ListId = list.Id,
+                    ProductId = need.ProductId,
+                    Quantity = need.ProductId is null ? null : need.Missing,
+                    FreeText = need.ProductId is null ? need.Label : null,
+                    AddedBy = ShoppingListItemOrigin.MealPlan,
+                    PlanFrom = from,
+                    PlanTo = to,
+                }
+            );
 
             added++;
         }

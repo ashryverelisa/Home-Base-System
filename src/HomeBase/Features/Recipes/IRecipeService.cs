@@ -1,4 +1,5 @@
 using HomeBase.Database.Entities;
+using HomeBase.Features.Common;
 
 namespace HomeBase.Features.Recipes;
 
@@ -8,12 +9,12 @@ public interface IRecipeService
 
     Task<Recipe?> FindAsync(int id, CancellationToken ct = default);
 
-    Task<IReadOnlyList<IngredientLine>> GetIngredientsAsync(
+    Task<IReadOnlyList<RecipeIngredientRow>> GetIngredientsAsync(
         int recipeId,
         CancellationToken ct = default
     );
 
-    Task<RecipeSaveResult> SaveAsync(Recipe recipe, CancellationToken ct = default);
+    Task<SaveResult<int>> SaveAsync(Recipe recipe, CancellationToken ct = default);
 
     Task DeleteAsync(int recipeId, CancellationToken ct = default);
 

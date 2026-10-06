@@ -32,7 +32,11 @@ public interface IMealPlanService
         CancellationToken ct = default
     );
 
-    Task<decimal> GetCostAsync(long entryId, CancellationToken ct = default);
+    Task<IReadOnlyDictionary<long, decimal>> GetCostsAsync(
+        DateOnly from,
+        DateOnly to,
+        CancellationToken ct = default
+    );
 
     Task<IReadOnlyList<NeedRow>> GetNeedsAsync(
         DateOnly from,

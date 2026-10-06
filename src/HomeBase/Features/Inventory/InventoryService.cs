@@ -3,12 +3,17 @@ using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
 using HomeBase.Features.Common;
+using HomeBase.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 
 namespace HomeBase.Features.Inventory;
 
-public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factory)
-    : IInventoryService
+public sealed class InventoryService(
+    IDbContextFactory<HomeBaseDbContext> factory,
+    IStringLocalizer<AppStrings> localizer,
+    TimeProvider time
+) : IInventoryService
 {
     public async Task<IReadOnlyList<StockLotView>> GetStockAsync(
         int? locationId = null,
@@ -30,7 +35,7 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
                 .Select(StockLotView.Projection)
                 .ToListAsync(ct);
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = time.Today();
 
         lots = lots.DueBy(
             today.AddDays(days),
@@ -58,39 +63,11 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        var lot = AddLot(db, request);
+        var lot = StockLedger.AddLot(db, request);
 
         await db.SaveChangesAsync(ct);
 
         return lot.Id;
-    }
-
-    internal static StockLot AddLot(HomeBaseDbContext db, BookInRequest request)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.QuantityBase);
-
-        var lot = new StockLot
-        {
-            ProductId = request.ProductId,
-            LocationId = request.LocationId,
-            QuantityBase = request.QuantityBase,
-            BestBefore = request.BestBefore,
-            PurchaseItemId = request.PurchaseItemId,
-        };
-
-        db.StockLots.Add(lot);
-        db.StockMovements.Add(
-            new StockMovement
-            {
-                Lot = lot,
-                ProductId = request.ProductId,
-                Type = StockMovementType.Purchase,
-                QuantityDelta = request.QuantityBase,
-                Note = request.Note,
-            }
-        );
-
-        return lot;
     }
 
     public async Task<StockChangeResult> TakeFromLotAsync(
@@ -115,7 +92,7 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
 
         if (taken > 0)
         {
-            await DeductAsync(db, lotId, lot.ProductId, taken, type, reason, note, ct);
+            await StockLedger.DeductAsync(db, lotId, lot.ProductId, taken, type, reason, note, ct);
             await transaction.CommitAsync(ct);
         }
 
@@ -135,7 +112,7 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
 
-        var result = await TakeFromProductAsync(
+        var result = await StockLedger.TakeFromProductAsync(
             db,
             productId,
             quantityBase,
@@ -149,46 +126,6 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
         await transaction.CommitAsync(ct);
 
         return result;
-    }
-
-    internal static async Task<StockChangeResult> TakeFromProductAsync(
-        HomeBaseDbContext db,
-        int productId,
-        decimal quantityBase,
-        StockMovementType type,
-        string? reason,
-        string? note,
-        long? mealPlanEntryId,
-        CancellationToken ct
-    )
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantityBase);
-
-        var lots = await db
-            .StockLots.InStock()
-            .ForProduct(productId)
-            .FirstExpiredFirstOut()
-            .Select(l => new LotQuantity(l.Id, l.QuantityBase))
-            .ToListAsync(ct);
-
-        var allocation = FefoAllocator.Allocate(lots, quantityBase);
-
-        foreach (var take in allocation.Takes)
-        {
-            await DeductAsync(
-                db,
-                take.LotId,
-                productId,
-                take.QuantityBase,
-                type,
-                reason,
-                note,
-                ct,
-                mealPlanEntryId
-            );
-        }
-
-        return allocation.ToResult();
     }
 
     public async Task CorrectLotAsync(
@@ -257,8 +194,8 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
                 ProductId = lot.ProductId,
                 Type = StockMovementType.Move,
                 QuantityDelta = 0,
-                Reason = "Umgelagert",
-                Note = newDate ? "MHD neu gesetzt" : null,
+                Reason = localizer["Stock.MoveReason"].Value,
+                Note = newDate ? localizer["Stock.BestBeforeReset"].Value : null,
             }
         );
 
@@ -269,7 +206,7 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        await db.StockLots.MarkOpenedAsync(lotId, DateTimeOffset.UtcNow, ct);
+        await db.StockLots.MarkOpenedAsync(lotId, time.GetUtcNow(), ct);
     }
 
     public async Task<IReadOnlyList<StockMovement>> GetMovementsAsync(
@@ -281,40 +218,5 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
         await using var db = await factory.CreateDbContextAsync(ct);
 
         return await db.StockMovements.ForProduct(productId).Newest(take).ToListAsync(ct);
-    }
-
-    private static async Task DeductAsync(
-        HomeBaseDbContext db,
-        long lotId,
-        int productId,
-        decimal quantityBase,
-        StockMovementType type,
-        string? reason,
-        string? note,
-        CancellationToken ct,
-        long? mealPlanEntryId = null
-    )
-    {
-        if (!await db.StockLots.TryDeductAsync(lotId, quantityBase, ct))
-        {
-            throw new InvalidOperationException(
-                $"Stock lot {lotId} no longer holds {quantityBase}; it changed concurrently."
-            );
-        }
-
-        db.StockMovements.Add(
-            new StockMovement
-            {
-                LotId = lotId,
-                ProductId = productId,
-                Type = type,
-                QuantityDelta = -quantityBase,
-                Reason = reason,
-                Note = note,
-                MealPlanEntryId = mealPlanEntryId,
-            }
-        );
-
-        await db.SaveChangesAsync(ct);
     }
 }

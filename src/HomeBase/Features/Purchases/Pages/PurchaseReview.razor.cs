@@ -1,3 +1,4 @@
+using HomeBase.Components.Shared;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
 using Microsoft.AspNetCore.Components;
@@ -13,7 +14,7 @@ public sealed partial class PurchaseReview
     private decimal _lineSum;
     private int _openCount;
     private bool _confirmed;
-    private bool _busy;
+    private readonly BusyState _busy = new();
 
     [Parameter]
     public long Id { get; set; }
@@ -50,20 +51,14 @@ public sealed partial class PurchaseReview
 
     private async Task ApplyAssignmentAsync(ReviewLineRow line, int productId)
     {
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             await Review.AssignAsync(line.Id, productId);
 
             _picks.Remove(line.Id);
 
             await LoadAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task SetPromoAsync(ReviewLineRow line, bool isPromo)
@@ -74,18 +69,12 @@ public sealed partial class PurchaseReview
 
     private async Task ConfirmAsync()
     {
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             await Purchases.ConfirmAsync(Id);
 
             Navigation.NavigateTo($"/purchases/{Id}");
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private string MatchLabel(ReviewLineRow line) =>

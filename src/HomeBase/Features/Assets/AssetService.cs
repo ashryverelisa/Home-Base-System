@@ -2,6 +2,7 @@ using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
+using HomeBase.Features.Common;
 using HomeBase.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -11,7 +12,8 @@ namespace HomeBase.Features.Assets;
 public sealed class AssetService(
     IDbContextFactory<HomeBaseDbContext> factory,
     IAssetDocumentStore documents,
-    IStringLocalizer<AppStrings> localizer
+    IStringLocalizer<AppStrings> localizer,
+    TimeProvider time
 ) : IAssetService
 {
     public async Task<IReadOnlyList<AssetRow>> SearchAsync(
@@ -30,7 +32,7 @@ public sealed class AssetService(
             assets = assets.MatchingSearch(term.Trim());
         }
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = time.Today();
 
         if (filter.WarrantyEndingSoon)
         {
@@ -56,17 +58,15 @@ public sealed class AssetService(
         return await db.Assets.FindAsync([id], ct);
     }
 
-    public async Task<AssetSaveResult> SaveAsync(Asset asset, CancellationToken ct = default)
+    public async Task<SaveResult<int>> SaveAsync(Asset asset, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(asset.Name))
         {
-            return AssetSaveResult.Failed(localizer["Assets.NameRequired"]);
+            return SaveResult.Failed<int>(localizer["Assets.NameRequired"]);
         }
 
         asset.Name = asset.Name.Trim();
-        asset.SerialNumber = string.IsNullOrWhiteSpace(asset.SerialNumber)
-            ? null
-            : asset.SerialNumber.Trim();
+        asset.SerialNumber = asset.SerialNumber.TrimToNull();
 
         await using var db = await factory.CreateDbContextAsync(ct);
 
@@ -81,7 +81,7 @@ public sealed class AssetService(
 
         await db.SaveChangesAsync(ct);
 
-        return AssetSaveResult.Ok(asset.Id);
+        return SaveResult.Ok(asset.Id);
     }
 
     public async Task SetStatusAsync(int id, AssetStatus status, CancellationToken ct = default)
@@ -97,7 +97,7 @@ public sealed class AssetService(
 
         asset.Status = status;
         asset.DisposedAt = status is AssetStatus.Sold or AssetStatus.Disposed
-            ? DateOnly.FromDateTime(DateTime.Today)
+            ? time.Today()
             : null;
 
         await db.SaveChangesAsync(ct);
@@ -115,7 +115,7 @@ public sealed class AssetService(
         }
 
         asset.NextServiceAt = asset.ServiceIntervalDays is { } days and > 0
-            ? DateOnly.FromDateTime(DateTime.Today).AddDays(days)
+            ? time.Today().AddDays(days)
             : null;
 
         await db.SaveChangesAsync(ct);

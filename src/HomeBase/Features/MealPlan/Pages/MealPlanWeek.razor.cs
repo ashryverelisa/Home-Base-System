@@ -1,4 +1,5 @@
 using System.Globalization;
+using HomeBase.Components.Shared;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Recipes;
 using Microsoft.AspNetCore.Components;
@@ -10,11 +11,11 @@ public sealed partial class MealPlanWeek
 {
     private static readonly MealSlot[] Slots = Enum.GetValues<MealSlot>();
 
-    private readonly Dictionary<long, decimal> _costs = [];
     private readonly List<CookSelection> _cookLines = [];
 
     private IReadOnlyList<MealPlanRow>? _entries;
     private IReadOnlyList<NeedRow>? _needs;
+    private IReadOnlyDictionary<long, decimal> _costs = new Dictionary<long, decimal>();
     private CookPlan? _cookPlan;
     private RecipeRow? _picked;
     private DateOnly _weekStart = PlanWeek.StartOf(DateOnly.FromDateTime(DateTime.Today));
@@ -25,7 +26,7 @@ public sealed partial class MealPlanWeek
     private long? _cookEntryId;
     private string? _cookMessage;
     private string? _listMessage;
-    private bool _busy;
+    private readonly BusyState _busy = new();
 
     [Inject]
     private NavigationManager Navigation { get; set; } = null!;
@@ -57,13 +58,7 @@ public sealed partial class MealPlanWeek
     {
         _entries = await Plan.GetRangeAsync(_weekStart, WeekEnd);
         _needs = await Plan.GetNeedsAsync(_weekStart, WeekEnd);
-
-        _costs.Clear();
-
-        foreach (var entry in _entries.Where(e => e.IsCooked))
-        {
-            _costs[entry.Id] = await Plan.GetCostAsync(entry.Id);
-        }
+        _costs = await Plan.GetCostsAsync(_weekStart, WeekEnd);
     }
 
     private async Task ShiftWeekAsync(int days)
@@ -104,9 +99,7 @@ public sealed partial class MealPlanWeek
             return;
         }
 
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             await Plan.AddAsync(
                 _newDate is { } date
@@ -122,11 +115,7 @@ public sealed partial class MealPlanWeek
             _entryText = string.Empty;
 
             await LoadAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task BeginCookAsync(MealPlanRow entry)
@@ -160,9 +149,7 @@ public sealed partial class MealPlanWeek
             return;
         }
 
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             var result = await Plan.CookAsync(entryId, CookSelection.ToBook(_cookLines));
 
@@ -177,11 +164,7 @@ public sealed partial class MealPlanWeek
             CancelCook();
 
             await LoadAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private async Task SkipAsync(MealPlanRow entry)
@@ -203,18 +186,12 @@ public sealed partial class MealPlanWeek
 
     private async Task ApplyToListAsync()
     {
-        _busy = true;
-
-        try
+        await _busy.RunAsync(async () =>
         {
             var added = await Plan.ApplyToShoppingListAsync(_weekStart, WeekEnd);
 
             _listMessage = Localizer["Plan.ListUpdated", added];
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 
     private static string DayLabel(DateOnly day) =>

@@ -130,7 +130,7 @@ else
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        Size="Size.Large"
-                       Disabled="_busy"
+                       Disabled="_busy.IsBusy"
                        OnClick="@SaveAsync">
                 @Localizer["Common.Save"]
             </MudButton>
@@ -139,7 +139,7 @@ else
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            Size="Size.Large"
-                           Disabled="_busy"
+                           Disabled="_busy.IsBusy"
                            StartIcon="@Icons.Material.Filled.Build"
                            OnClick="@CompleteServiceAsync">
                     @Localizer["Assets.ServiceDone"]
@@ -245,7 +245,7 @@ else
                     <CustomContent Context="upload">
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Primary"
-                                   Disabled="_busy"
+                                   Disabled="_busy.IsBusy"
                                    StartIcon="@Icons.Material.Filled.CloudUpload"
                                    OnClick="@(() => upload.OpenFilePickerAsync())">
                             @Localizer["Assets.Upload"]

@@ -23,7 +23,7 @@ public partial class BookIn
     private DateOnly? _bestBefore;
     private bool _rememberShelfLife;
     private string? _error;
-    private bool _busy;
+    private readonly BusyState _busy = new();
 
     private DateTime? BestBeforeDate
     {
@@ -135,10 +135,9 @@ public partial class BookIn
             return;
         }
 
-        _busy = true;
         _error = null;
 
-        try
+        await _busy.RunAsync(async () =>
         {
             await Inventory.BookInAsync(
                 new BookInRequest(_selected.Id, _quantityBase, _locationId, _bestBefore)
@@ -150,10 +149,6 @@ public partial class BookIn
             }
 
             Navigation.NavigateTo("/inventory");
-        }
-        finally
-        {
-            _busy = false;
-        }
+        });
     }
 }

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace HomeBase.Features.Common;
+namespace HomeBase.Features.Matching;
 
 public static partial class AliasText
 {

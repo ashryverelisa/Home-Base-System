@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
+using HomeBase.Features.Common;
 
 namespace HomeBase.Features.Catalog;
 
@@ -126,11 +127,11 @@ internal static partial class OpenFoodFactsMapping
 
         return new OffProduct(
             gtin,
-            Blank(dto.ProductNameDe) ?? Blank(dto.ProductName),
-            Blank(dto.Brands?.Split(',')[0]),
+            dto.ProductNameDe.TrimToNull() ?? dto.ProductName.TrimToNull(),
+            dto.Brands?.Split(',')[0].TrimToNull(),
             unit,
             size,
-            Blank(dto.ImageFrontUrl)
+            dto.ImageFrontUrl.TrimToNull()
         );
     }
 
@@ -141,16 +142,9 @@ internal static partial class OpenFoodFactsMapping
             return null;
         }
 
-        return unit.Trim().ToLowerInvariant() switch
-        {
-            "g" or "gr" or "gramm" => (BaseUnit.Gram, amount.Value),
-            "kg" => (BaseUnit.Gram, amount.Value * 1000),
-            "ml" => (BaseUnit.Milliliter, amount.Value),
-            "cl" => (BaseUnit.Milliliter, amount.Value * 10),
-            "dl" => (BaseUnit.Milliliter, amount.Value * 100),
-            "l" or "lt" or "liter" or "litre" => (BaseUnit.Milliliter, amount.Value * 1000),
-            _ => null,
-        };
+        return UnitConversion.Metric(unit) is { } metric
+            ? (metric.Unit, amount.Value * metric.Factor)
+            : null;
     }
 
     public static (BaseUnit Unit, decimal Size)? PackageFrom(string? quantity)
@@ -184,9 +178,6 @@ internal static partial class OpenFoodFactsMapping
         )
             ? result
             : null;
-
-    private static string? Blank(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     [GeneratedRegex(@"^\s*(?<amount>\d+(?:[.,]\d+)?)\s*(?<unit>[a-zA-Z]+)\b")]
     private static partial Regex QuantityPattern();

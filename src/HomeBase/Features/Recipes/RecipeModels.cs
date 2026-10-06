@@ -1,16 +1,12 @@
+using System.Linq.Expressions;
+using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Features.Catalog;
 
 namespace HomeBase.Features.Recipes;
 
-public sealed record RecipeSaveResult(bool Succeeded, int RecipeId, string? Error)
-{
-    public static RecipeSaveResult Ok(int recipeId) => new(true, recipeId, null);
-
-    public static RecipeSaveResult Failed(string error) => new(false, 0, error);
-}
-
-public sealed record IngredientLine(
+// An ingredient as the recipe editor shows it; the meal plan reads ingredients as IngredientLine.
+public sealed record RecipeIngredientRow(
     int Id,
     int? ProductId,
     string? ProductName,
@@ -22,6 +18,19 @@ public sealed record IngredientLine(
     bool NeedsReview
 )
 {
+    public static readonly Expression<Func<RecipeIngredient, RecipeIngredientRow>> Projection =
+        ingredient => new RecipeIngredientRow(
+            ingredient.Id,
+            ingredient.ProductId,
+            ingredient.Product!.Name,
+            ingredient.FreeText,
+            ingredient.Product!.BaseUnit,
+            ingredient.QuantityBase,
+            ingredient.IsOptional,
+            ingredient.Note,
+            ingredient.NeedsReview
+        );
+
     public string Label => ProductName ?? FreeText ?? string.Empty;
 
     public bool IsTracked => ProductId is not null && QuantityBase is > 0;

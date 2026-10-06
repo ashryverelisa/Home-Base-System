@@ -2,7 +2,7 @@ using HomeBase.Database.Enums;
 
 namespace HomeBase.Database.Entities;
 
-public class StorageLocation
+public class StorageLocation : ITreeNode
 {
     public int Id { get; set; }
     public int? ParentId { get; set; }

@@ -74,7 +74,7 @@ else
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        Size="Size.Large"
-                       Disabled="_busy"
+                       Disabled="_busy.IsBusy"
                        OnClick="@SaveAsync">
                 @Localizer["Common.Save"]
             </MudButton>
@@ -83,7 +83,7 @@ else
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            Size="Size.Large"
-                           Disabled="_busy"
+                           Disabled="_busy.IsBusy"
                            StartIcon="@Icons.Material.Filled.Restaurant"
                            OnClick="@CookNowAsync">
                     @Localizer["Recipes.CookNow"]
@@ -131,13 +131,13 @@ else
                                                  Style="min-width: 16rem"/>
                                 <MudButton Variant="Variant.Filled"
                                            Color="Color.Primary"
-                                           Disabled="@(_busy || _choices.GetValueOrDefault(review.IngredientId) is null)"
+                                           Disabled="@(_busy.IsBusy || _choices.GetValueOrDefault(review.IngredientId) is null)"
                                            OnClick="@(() => AssignAsync(review))">
                                     @Localizer["Recipes.ReviewAssign"]
                                 </MudButton>
                                 <MudButton Variant="Variant.Text"
                                            Color="Color.Default"
-                                           Disabled="_busy"
+                                           Disabled="_busy.IsBusy"
                                            OnClick="@(() => KeepAsTextAsync(review))">
                                     @Localizer["Recipes.ReviewKeepText"]
                                 </MudButton>

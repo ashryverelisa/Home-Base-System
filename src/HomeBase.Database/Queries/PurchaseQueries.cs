@@ -34,12 +34,22 @@ public static class PurchaseQueries
         this IQueryable<PurchaseItem> items
     ) => items.OrderBy(i => i.LineNo);
 
-    public static Task<Dictionary<long, int>> LineCountsByPurchaseAsync(
+    // All lines, and the item lines that still wait for a product.
+    public static Task<Dictionary<long, (int Lines, int Unmatched)>> LineCountsAsync(
         this IQueryable<PurchaseItem> items,
+        IReadOnlyCollection<long> purchaseIds,
         CancellationToken ct = default
     ) =>
         items
+            .Where(i => purchaseIds.Contains(i.PurchaseId))
             .GroupBy(i => i.PurchaseId)
-            .Select(g => new { PurchaseId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.PurchaseId, x => x.Count, ct);
+            .Select(g => new
+            {
+                PurchaseId = g.Key,
+                Lines = g.Count(),
+                Unmatched = g.Count(i =>
+                    i.LineType == PurchaseLineType.Item && i.ProductId == null
+                ),
+            })
+            .ToDictionaryAsync(x => x.PurchaseId, x => (x.Lines, x.Unmatched), ct);
 }

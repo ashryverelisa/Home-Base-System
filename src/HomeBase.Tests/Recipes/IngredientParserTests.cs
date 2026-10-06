@@ -1,15 +1,16 @@
-using HomeBase.Features.Ingest;
+using HomeBase.Database.Enums;
+using HomeBase.Features.Recipes;
 
-namespace HomeBase.Tests.Ingest;
+namespace HomeBase.Tests.Recipes;
 
-public class RecipeIngredientParserTests
+public class IngredientParserTests
 {
-    private static RecipeIngestService.ParsedIngredient Parse(
+    private static ParsedIngredient Parse(
         string? text,
         decimal? quantity = null,
         string? unit = null,
         string? name = null
-    ) => RecipeIngestService.Parse(new RecipeIngredientRequest(text, quantity, unit, name, null, null));
+    ) => IngredientParser.Parse(text, quantity, unit, name);
 
     [Theory]
     [InlineData("200 g Mehl", 200, "g", "Mehl")]
@@ -36,7 +37,7 @@ public class RecipeIngredientParserTests
     {
         var parsed = Parse("2 Eier");
 
-        Assert.Equal(new RecipeIngestService.ParsedIngredient("Eier", 2m, null), parsed);
+        Assert.Equal(new ParsedIngredient("Eier", 2m, null), parsed);
     }
 
     [Fact]
@@ -44,7 +45,7 @@ public class RecipeIngredientParserTests
     {
         var parsed = Parse("2 große Zwiebeln");
 
-        Assert.Equal(new RecipeIngestService.ParsedIngredient("große Zwiebeln", 2m, null), parsed);
+        Assert.Equal(new ParsedIngredient("große Zwiebeln", 2m, null), parsed);
     }
 
     [Theory]
@@ -75,7 +76,7 @@ public class RecipeIngredientParserTests
     {
         var parsed = Parse("200 g Mehl", quantity: 1m, unit: " kg ", name: " Weizenmehl ");
 
-        Assert.Equal(new RecipeIngestService.ParsedIngredient("Weizenmehl", 1m, "kg"), parsed);
+        Assert.Equal(new ParsedIngredient("Weizenmehl", 1m, "kg"), parsed);
     }
 
     [Theory]
@@ -85,5 +86,44 @@ public class RecipeIngredientParserTests
     public void Parse_NoTextAndNoName_YieldsEmptyName(string? text)
     {
         Assert.Equal(string.Empty, Parse(text).Name);
+    }
+
+    [Theory]
+    [InlineData(1.5, "kg", BaseUnit.Gram, 1500)]
+    [InlineData(250, "g", BaseUnit.Gram, 250)]
+    [InlineData(0.5, "l", BaseUnit.Milliliter, 500)]
+    [InlineData(3, "Stk", BaseUnit.Piece, 3)]
+    [InlineData(2, null, BaseUnit.Piece, 2)]
+    public void ToBaseQuantity_ConvertsMatchingUnits(
+        double quantity,
+        string? unit,
+        BaseUnit baseUnit,
+        double expected
+    )
+    {
+        Assert.Equal(
+            (decimal)expected,
+            IngredientParser.ToBaseQuantity((decimal)quantity, unit, baseUnit, null)
+        );
+    }
+
+    [Fact]
+    public void ToBaseQuantity_CountedGrams_UsePieceWeight()
+    {
+        Assert.Equal(180m, IngredientParser.ToBaseQuantity(3m, "Stk", BaseUnit.Gram, 60m));
+        Assert.Null(IngredientParser.ToBaseQuantity(3m, "Stk", BaseUnit.Gram, null));
+    }
+
+    [Theory]
+    [InlineData(2, "EL", BaseUnit.Milliliter)]
+    [InlineData(1, "kg", BaseUnit.Milliliter)]
+    [InlineData(0, "g", BaseUnit.Gram)]
+    public void ToBaseQuantity_UnknownOrMismatchedUnit_IsNull(
+        double quantity,
+        string unit,
+        BaseUnit baseUnit
+    )
+    {
+        Assert.Null(IngredientParser.ToBaseQuantity((decimal)quantity, unit, baseUnit, null));
     }
 }

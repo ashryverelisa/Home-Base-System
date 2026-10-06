@@ -2,9 +2,8 @@ using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
-using HomeBase.Features.Common;
 
-namespace HomeBase.Features.Ingest;
+namespace HomeBase.Features.Matching;
 
 // A confirmed assignment becomes an alias, so the same text matches on its own next time.
 // Receipt lines and recipe ingredients share it: one alias helps both.

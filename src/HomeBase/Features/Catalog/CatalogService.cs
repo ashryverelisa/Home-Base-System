@@ -1,6 +1,7 @@
 ﻿using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Queries;
+using HomeBase.Features.Common;
 using HomeBase.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -47,20 +48,47 @@ public sealed class CatalogService(
         return await db.Products.ByGtinAsync(gtin.Trim(), ct);
     }
 
-    public async Task<ProductSaveResult> SaveAsync(Product product, CancellationToken ct = default)
+    public async Task<ProductRow?> FindRowByGtinAsync(
+        string gtin,
+        CancellationToken ct = default
+    )
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        var trimmed = gtin.Trim();
+
+        var row = await db
+            .Products.Where(p => p.Gtin == trimmed)
+            .Select(ProductRow.Projection)
+            .FirstOrDefaultAsync(ct);
+
+        if (row is null)
+        {
+            return null;
+        }
+
+        var stock = await db
+            .StockLots.InStock()
+            .ForProduct(row.Id)
+            .SumAsync(l => l.QuantityBase, ct);
+
+        return row with { StockBase = stock };
+    }
+
+    public async Task<SaveResult<int>> SaveAsync(Product product, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(product.Name))
         {
-            return ProductSaveResult.Failed(localizer["Catalog.NameRequired"]);
+            return SaveResult.Failed<int>(localizer["Catalog.NameRequired"]);
         }
 
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        product.Gtin = string.IsNullOrWhiteSpace(product.Gtin) ? null : product.Gtin.Trim();
+        product.Gtin = product.Gtin.TrimToNull();
 
         if (product.Gtin is { } gtin && await db.Products.GtinTakenAsync(gtin, product.Id, ct))
         {
-            return ProductSaveResult.Failed(localizer["Catalog.GtinTaken", gtin]);
+            return SaveResult.Failed<int>(localizer["Catalog.GtinTaken", gtin]);
         }
 
         if (product.Id == 0)
@@ -74,7 +102,7 @@ public sealed class CatalogService(
 
         await db.SaveChangesAsync(ct);
 
-        return ProductSaveResult.Ok(product.Id);
+        return SaveResult.Ok(product.Id);
     }
 
     public async Task LearnShelfLifeAsync(int productId, int days, CancellationToken ct = default)
