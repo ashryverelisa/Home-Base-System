@@ -79,6 +79,13 @@ public sealed class ShoppingService(
                 existing.Quantity = (existing.Quantity ?? 0) + added;
             }
 
+            if (NormalizePrice(request.TargetPrice) is { } price)
+            {
+                existing.TargetPrice = price;
+            }
+
+            existing.Priority = Math.Max(existing.Priority, (int)request.Priority);
+
             await db.SaveChangesAsync(ct);
 
             return ShoppingSaveResult.Ok(existing.Id);
@@ -89,6 +96,8 @@ public sealed class ShoppingService(
             ListId = request.ListId,
             ProductId = request.ProductId,
             Quantity = request.Quantity,
+            TargetPrice = NormalizePrice(request.TargetPrice),
+            Priority = (int)request.Priority,
             Note = request.Note,
             AddedBy = request.Origin,
         };
@@ -119,7 +128,8 @@ public sealed class ShoppingService(
             FreeText = text,
             Quantity = request.Quantity,
             Unit = string.IsNullOrWhiteSpace(request.Unit) ? null : request.Unit.Trim(),
-            TargetPrice = request.TargetPrice,
+            TargetPrice = NormalizePrice(request.TargetPrice),
+            Priority = (int)request.Priority,
             Note = request.Note,
             AddedBy = request.Origin,
         };
@@ -167,6 +177,46 @@ public sealed class ShoppingService(
         }
 
         item.Quantity = quantity is > 0 ? quantity : null;
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task SetTargetPriceAsync(
+        long itemId,
+        decimal? price,
+        CancellationToken ct = default
+    )
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        var item = await db.ShoppingListItems.FindAsync([itemId], ct);
+
+        if (item is null)
+        {
+            return;
+        }
+
+        item.TargetPrice = NormalizePrice(price);
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task SetPriorityAsync(
+        long itemId,
+        ShoppingPriority priority,
+        CancellationToken ct = default
+    )
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        var item = await db.ShoppingListItems.FindAsync([itemId], ct);
+
+        if (item is null)
+        {
+            return;
+        }
+
+        item.Priority = (int)priority;
 
         await db.SaveChangesAsync(ct);
     }
@@ -290,6 +340,9 @@ public sealed class ShoppingService(
             ?? lists.FirstOrDefault(l => l.IsDefault)
             ?? lists[0];
     }
+
+    internal static decimal? NormalizePrice(decimal? price) =>
+        price is > 0 ? Math.Round(price.Value, 2, MidpointRounding.AwayFromZero) : null;
 
     internal static decimal WholePackages(decimal missing, decimal packageSize) =>
         packageSize > 0 ? Math.Ceiling(missing / packageSize) * packageSize : missing;

@@ -48,4 +48,6 @@ public sealed record ShoppingItemRow(
     public bool IsAutomatic => AddedBy == ShoppingListItemOrigin.AutoRestock;
 
     public bool IsImportant => Priority > 0;
+
+    public ShoppingPriority PriorityLevel => ShoppingPriorities.FromValue(Priority);
 }

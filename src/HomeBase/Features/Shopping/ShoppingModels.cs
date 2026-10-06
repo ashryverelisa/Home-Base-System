@@ -7,7 +7,9 @@ public sealed record AddProductRequest(
     int ProductId,
     decimal? Quantity = null,
     string? Note = null,
-    ShoppingListItemOrigin Origin = ShoppingListItemOrigin.User
+    ShoppingListItemOrigin Origin = ShoppingListItemOrigin.User,
+    decimal? TargetPrice = null,
+    ShoppingPriority Priority = ShoppingPriority.Normal
 );
 
 public sealed record AddFreeTextRequest(
@@ -17,7 +19,8 @@ public sealed record AddFreeTextRequest(
     string? Unit = null,
     decimal? TargetPrice = null,
     string? Note = null,
-    ShoppingListItemOrigin Origin = ShoppingListItemOrigin.User
+    ShoppingListItemOrigin Origin = ShoppingListItemOrigin.User,
+    ShoppingPriority Priority = ShoppingPriority.Normal
 );
 
 public sealed record ShoppingSaveResult(bool Succeeded, long ItemId, string? Error)

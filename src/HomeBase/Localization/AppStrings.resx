@@ -367,6 +367,30 @@
   <data name="Shopping.Reopen" xml:space="preserve">
     <value>Zurück auf die Liste</value>
   </data>
+  <data name="Shopping.Price" xml:space="preserve">
+    <value>Preis</value>
+  </data>
+  <data name="Shopping.EditPrice" xml:space="preserve">
+    <value>Preis festlegen</value>
+  </data>
+  <data name="Shopping.OpenTotal" xml:space="preserve">
+    <value>Offen insgesamt: {0}</value>
+  </data>
+  <data name="Shopping.Priority" xml:space="preserve">
+    <value>Priorität</value>
+  </data>
+  <data name="Shopping.Priority.Urgent" xml:space="preserve">
+    <value>Dringend</value>
+  </data>
+  <data name="Shopping.Priority.High" xml:space="preserve">
+    <value>Hoch</value>
+  </data>
+  <data name="Shopping.Priority.Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Shopping.Priority.Low" xml:space="preserve">
+    <value>Niedrig</value>
+  </data>
   <data name="Shopping.TextRequired" xml:space="preserve">
     <value>Bitte etwas eintragen oder ein Produkt wählen.</value>
   </data>

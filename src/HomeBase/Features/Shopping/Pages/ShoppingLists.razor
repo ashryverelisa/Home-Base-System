@@ -29,7 +29,7 @@ else
 
     <MudPaper Outlined="true" Class="pa-4 mb-4">
         <MudGrid Spacing="3" Class="align-center">
-            <MudItem xs="12" sm="@(_picked is null ? 9 : 6)">
+            <MudItem xs="12" sm="@SearchWidth">
                 <MudAutocomplete T="ProductRow"
                                  Value="_picked"
                                  ValueChanged="Pick"
@@ -65,6 +65,29 @@ else
                                      Label="@Localizer["Shopping.Quantity", Units.Abbreviation(_picked.BaseUnit)]"
                                      Variant="Variant.Outlined"
                                      Min="0"/>
+                </MudItem>
+            }
+
+            @if (TracksPrices)
+            {
+                <MudItem xs="6" sm="3">
+                    <MudNumericField T="decimal?"
+                                     @bind-Value="_price"
+                                     Label="@Localizer["Shopping.Price"]"
+                                     Variant="Variant.Outlined"
+                                     Format="N2"
+                                     Min="0m"/>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudSelect T="ShoppingPriority"
+                               @bind-Value="_priority"
+                               Label="@Localizer["Shopping.Priority"]"
+                               Variant="Variant.Outlined">
+                        @foreach (var level in ShoppingPriorities.All)
+                        {
+                            <MudSelectItem T="ShoppingPriority" Value="level">@PriorityName(level)</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
             }
 
@@ -114,13 +137,73 @@ else
                                     @Localizer["Shopping.AutoBadge"]
                                 </MudChip>
                             }
+                            @if (TracksPrices && item.PriorityLevel != ShoppingPriority.Normal)
+                            {
+                                <MudChip T="string" Size="Size.Small" Class="ml-2" Color="@PriorityColor(item.PriorityLevel)" Variant="Variant.Text">
+                                    @PriorityName(item.PriorityLevel)
+                                </MudChip>
+                            }
                         </MudText>
                         <MudText Typo="Typo.caption">@Describe(item)</MudText>
                     </div>
-                    <MudIconButton Icon="@(item.IsImportant ? Icons.Material.Filled.Star : Icons.Material.Outlined.StarBorder)"
-                                   Color="@(item.IsImportant ? Color.Warning : Color.Default)"
-                                   title="@Localizer["Shopping.Important"]"
-                                   OnClick="@(() => ToggleImportantAsync(item))"/>
+                    @if (TracksPrices)
+                    {
+                        @if (_editingPriceId == item.Id)
+                        {
+                            <MudNumericField T="decimal?"
+                                             @bind-Value="_editPrice"
+                                             Label="@Localizer["Shopping.Price"]"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Format="N2"
+                                             Min="0m"
+                                             Immediate="true"
+                                             AutoFocus="true"
+                                             OnKeyDown="@(e => OnPriceKeyDownAsync(e, item))"
+                                             Style="max-width: 9rem"/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                           Color="Color.Primary"
+                                           title="@Localizer["Common.Save"]"
+                                           OnClick="@(() => SavePriceAsync(item))"/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                           Color="Color.Default"
+                                           title="@Localizer["Common.Cancel"]"
+                                           OnClick="@CancelPriceEdit"/>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Text"
+                                       Color="@(item.TargetPrice is null ? Color.Default : Color.Primary)"
+                                       StartIcon="@(item.TargetPrice is null ? Icons.Material.Filled.Euro : null)"
+                                       title="@Localizer["Shopping.EditPrice"]"
+                                       OnClick="@(() => EditPrice(item))">
+                                @(item.TargetPrice is { } price ? Units.Money(price) : Localizer["Shopping.Price"])
+                            </MudButton>
+                        }
+                        <MudMenu Icon="@PriorityIcon(item.PriorityLevel)"
+                                 Color="@PriorityColor(item.PriorityLevel)"
+                                 AriaLabel="@Localizer["Shopping.Priority"]"
+                                 Dense="true"
+                                 AnchorOrigin="Origin.BottomRight"
+                                 TransformOrigin="Origin.TopRight">
+                            @foreach (var level in ShoppingPriorities.All)
+                            {
+                                <MudMenuItem Icon="@PriorityIcon(level)"
+                                             IconColor="@PriorityColor(level)"
+                                             Disabled="@(level == item.PriorityLevel)"
+                                             OnClick="@(() => SetPriorityAsync(item, level))">
+                                    @PriorityName(level)
+                                </MudMenuItem>
+                            }
+                        </MudMenu>
+                    }
+                    else
+                    {
+                        <MudIconButton Icon="@(item.IsImportant ? Icons.Material.Filled.Star : Icons.Material.Outlined.StarBorder)"
+                                       Color="@(item.IsImportant ? Color.Warning : Color.Default)"
+                                       title="@Localizer["Shopping.Important"]"
+                                       OnClick="@(() => ToggleImportantAsync(item))"/>
+                    }
                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                    Color="Color.Default"
                                    title="@Localizer["Shopping.Remove"]"
@@ -133,6 +216,13 @@ else
                 }
             }
         </MudPaper>
+
+        @if (TracksPrices && OpenTotal is { } total)
+        {
+            <MudText Typo="Typo.body1" Align="Align.Right" Class="mt-2 mr-2">
+                @Localizer["Shopping.OpenTotal", Units.Money(total)]
+            </MudText>
+        }
     }
 
     <div class="d-flex flex-wrap align-center gap-3 mt-4">
@@ -175,6 +265,10 @@ else
                             <MudText Typo="Typo.body1" Style="text-decoration: line-through">@item.Label</MudText>
                             <MudText Typo="Typo.caption">@Describe(item)</MudText>
                         </div>
+                        @if (TracksPrices && item.TargetPrice is { } settledPrice)
+                        {
+                            <MudText Typo="Typo.body2">@Units.Money(settledPrice)</MudText>
+                        }
                         <MudButton Size="Size.Small"
                                    Variant="Variant.Outlined"
                                    Color="Color.Default"
