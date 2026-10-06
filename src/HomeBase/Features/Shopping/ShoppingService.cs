@@ -25,9 +25,21 @@ public sealed class ShoppingService(
             .Select(ShoppingListRow.Projection)
             .ToListAsync(ct);
 
-        var counts = await db.ShoppingListItems.OpenCountsByListAsync(ct);
+        var summaries = await db.ShoppingListItems.OpenSummaryByListAsync(ct);
 
-        return [.. rows.Select(r => r with { OpenCount = counts.GetValueOrDefault(r.Id) })];
+        return
+        [
+            .. rows.Select(r =>
+                summaries.GetValueOrDefault(r.Id) is { } summary
+                    ? r with
+                    {
+                        OpenCount = summary.Count,
+                        UnpricedCount = summary.UnpricedCount,
+                        OpenTotal = summary.Total,
+                    }
+                    : r
+            ),
+        ];
     }
 
     public async Task<IReadOnlyList<ShoppingItemRow>> GetItemsAsync(

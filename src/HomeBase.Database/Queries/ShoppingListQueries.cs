@@ -59,6 +59,24 @@ public static class ShoppingListQueries
             .Select(g => new { ListId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.ListId, x => x.Count, ct);
 
+    public static Task<Dictionary<int, OpenListSummary>> OpenSummaryByListAsync(
+        this IQueryable<ShoppingListItem> items,
+        CancellationToken ct = default
+    ) =>
+        items
+            .Open()
+            .GroupBy(i => i.ListId)
+            .Select(g => new
+            {
+                ListId = g.Key,
+                Summary = new OpenListSummary(
+                    g.Count(),
+                    g.Count(i => i.TargetPrice == null),
+                    g.Sum(i => i.TargetPrice ?? 0)
+                ),
+            })
+            .ToDictionaryAsync(x => x.ListId, x => x.Summary, ct);
+
     public static Task<HashSet<int>> OpenProductIdsAsync(
         this IQueryable<ShoppingListItem> items,
         CancellationToken ct = default
@@ -70,3 +88,5 @@ public static class ShoppingListQueries
             .Distinct()
             .ToHashSetAsync(ct);
 }
+
+public sealed record OpenListSummary(int Count, int UnpricedCount, decimal Total);

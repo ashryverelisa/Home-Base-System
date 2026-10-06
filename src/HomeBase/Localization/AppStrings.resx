@@ -379,8 +379,20 @@
   <data name="Shopping.EditPrice" xml:space="preserve">
     <value>Preis festlegen</value>
   </data>
-  <data name="Shopping.OpenTotal" xml:space="preserve">
-    <value>Offen insgesamt: {0}</value>
+  <data name="Shopping.Column.Item" xml:space="preserve">
+    <value>Artikel</value>
+  </data>
+  <data name="Shopping.Column.Quantity" xml:space="preserve">
+    <value>Menge</value>
+  </data>
+  <data name="Shopping.Total" xml:space="preserve">
+    <value>Summe</value>
+  </data>
+  <data name="Shopping.Unpriced" xml:space="preserve">
+    <value>{0} ohne Preis</value>
+  </data>
+  <data name="Shopping.AllListsTotal" xml:space="preserve">
+    <value>Alle Preis-Listen zusammen: {0}</value>
   </data>
   <data name="Shopping.Priority" xml:space="preserve">
     <value>Priorität</value>
@@ -410,7 +422,7 @@
     <value>Einkauf</value>
   </data>
   <data name="Purchases.Empty" xml:space="preserve">
-    <value>Noch keine Einkäufe erfasst. Tippe einen Bon von Hand ein — damit beginnen die Preisdaten.</value>
+    <value>Noch keine Einkäufe erfasst. Tippe einen Bon von Hand ein damit beginnen die Preisdaten.</value>
   </data>
   <data name="Purchases.NoStore" xml:space="preserve">
     <value>ohne Händler</value>
@@ -476,7 +488,7 @@
     <value>Bonsumme</value>
   </data>
   <data name="Purchases.ReceiptTotalHint" xml:space="preserve">
-    <value>Optional — dient als Prüfsumme.</value>
+    <value>Optional dient als Prüfsumme.</value>
   </data>
   <data name="Purchases.BookIntoStock" xml:space="preserve">
     <value>Artikel in den Bestand einbuchen</value>
@@ -560,7 +572,7 @@
     <value>Freigeben und einbuchen</value>
   </data>
   <data name="Review.PromoHint" xml:space="preserve">
-    <value>Preis auffällig niedrig — Aktion?</value>
+    <value>Preis auffällig niedrig Aktion?</value>
   </data>
   <data name="Review.Unmatched" xml:space="preserve">
     <value>kein Produkt erkannt</value>
@@ -788,7 +800,7 @@
     <value>Am meisten weggeworfen</value>
   </data>
   <data name="Analytics.NoWaste" xml:space="preserve">
-    <value>Nichts als Verderb gebucht — gut.</value>
+    <value>Nichts als Verderb gebucht gut.</value>
   </data>
   <data name="Analytics.Reach" xml:space="preserve">
     <value>Reichweite</value>
@@ -872,7 +884,7 @@
     <value>Menge ({0})</value>
   </data>
   <data name="Recipes.NoQuantity" xml:space="preserve">
-    <value>ohne Menge — wird nicht abgebucht</value>
+    <value>ohne Menge wird nicht abgebucht</value>
   </data>
   <data name="Recipes.Optional" xml:space="preserve">
     <value>optional</value>
@@ -956,7 +968,7 @@
     <value>Kosten {0}</value>
   </data>
   <data name="Plan.CookHint" xml:space="preserve">
-    <value>Abbuchung für {0} Portionen — bitte prüfen und anpassen.</value>
+    <value>Abbuchung für {0} Portionen bitte prüfen und anpassen.</value>
   </data>
   <data name="Plan.Available" xml:space="preserve">
     <value>Bestand {0}</value>
@@ -977,7 +989,7 @@
     <value>gebraucht {0}</value>
   </data>
   <data name="Plan.UntrackedNeed" xml:space="preserve">
-    <value>ohne Menge — nur als Erinnerung</value>
+    <value>ohne Menge nur als Erinnerung</value>
   </data>
   <data name="Plan.Covered" xml:space="preserve">
     <value>gedeckt</value>
@@ -989,7 +1001,7 @@
     <value>{0} Positionen auf der Liste.</value>
   </data>
   <data name="Plan.NoNeeds" xml:space="preserve">
-    <value>Kein Bedarf — entweder nichts geplant oder alles da.</value>
+    <value>Kein Bedarf entweder nichts geplant oder alles da.</value>
   </data>
   <data name="Unit.Kilogram.Abbreviation" xml:space="preserve">
     <value>kg</value>

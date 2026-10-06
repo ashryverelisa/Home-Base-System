@@ -11,6 +11,10 @@ public sealed record ShoppingListRow(int Id, string Name, ShoppingListKind Kind,
 
     public int OpenCount { get; init; }
 
+    public int UnpricedCount { get; init; }
+
+    public decimal OpenTotal { get; init; }
+
     // Groceries come from the catalog and price history; everything else gets a price and priority by hand.
     public bool TracksPrices => Kind != ShoppingListKind.Groceries;
 }

@@ -14,11 +14,9 @@ public sealed partial class ShoppingLists
     private IReadOnlyList<ShoppingItemRow>? _settled;
     private ProductRow? _picked;
     private string _term = string.Empty;
-    private decimal _quantity;
+    private decimal? _quantity;
     private decimal? _price;
     private ShoppingPriority _priority = ShoppingPriority.Normal;
-    private long? _editingPriceId;
-    private decimal? _editPrice;
     private int _listId;
     private bool _showSettled;
     private string? _error;
@@ -45,7 +43,6 @@ public sealed partial class ShoppingLists
         _term = string.Empty;
         _price = null;
         _priority = ShoppingPriority.Normal;
-        _editingPriceId = null;
         _error = null;
 
         await LoadItemsAsync();
@@ -69,7 +66,7 @@ public sealed partial class ShoppingLists
     private void Pick(ProductRow? row)
     {
         _picked = row;
-        _quantity = row?.PackageSize ?? 0;
+        _quantity = row?.PackageSize;
         _error = null;
     }
 
@@ -93,7 +90,13 @@ public sealed partial class ShoppingLists
                     )
                 )
                 : await Shopping.AddFreeTextAsync(
-                    new AddFreeTextRequest(_listId, _term, TargetPrice: price, Priority: priority)
+                    new AddFreeTextRequest(
+                        _listId,
+                        _term,
+                        Quantity: TracksPrices && _quantity > 0 ? _quantity : null,
+                        TargetPrice: price,
+                        Priority: priority
+                    )
                 );
 
             if (!result.Succeeded)
@@ -104,7 +107,7 @@ public sealed partial class ShoppingLists
 
             _picked = null;
             _term = string.Empty;
-            _quantity = 0;
+            _quantity = null;
             _price = null;
             _priority = ShoppingPriority.Normal;
 
@@ -130,33 +133,23 @@ public sealed partial class ShoppingLists
         await LoadItemsAsync();
     }
 
-    private void EditPrice(ShoppingItemRow item)
+    private async Task SetPriceAsync(ShoppingItemRow item, decimal? price)
     {
-        _editingPriceId = item.Id;
-        _editPrice = item.TargetPrice;
-    }
-
-    private void CancelPriceEdit() => _editingPriceId = null;
-
-    private async Task SavePriceAsync(ShoppingItemRow item)
-    {
-        await Shopping.SetTargetPriceAsync(item.Id, _editPrice);
-
-        _editingPriceId = null;
-
+        await Shopping.SetTargetPriceAsync(item.Id, price);
         await LoadItemsAsync();
     }
 
-    private async Task OnPriceKeyDownAsync(KeyboardEventArgs e, ShoppingItemRow item)
+    private async Task SetQuantityAsync(ShoppingItemRow item, decimal? quantity)
     {
-        switch (e.Key)
+        await Shopping.SetQuantityAsync(item.Id, quantity);
+        await LoadItemsAsync();
+    }
+
+    private async Task OnAddKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
         {
-            case "Enter":
-                await SavePriceAsync(item);
-                break;
-            case "Escape":
-                CancelPriceEdit();
-                break;
+            await AddAsync();
         }
     }
 
@@ -185,17 +178,11 @@ public sealed partial class ShoppingLists
         await LoadItemsAsync();
     }
 
-    private bool TracksPrices => _lists.FirstOrDefault(l => l.Id == _listId)?.TracksPrices ?? false;
+    private ShoppingListRow? CurrentList => _lists.FirstOrDefault(l => l.Id == _listId);
 
-    private int SearchWidth =>
-        TracksPrices ? 12
-        : _picked is null ? 9
-        : 6;
+    private bool TracksPrices => CurrentList?.TracksPrices ?? false;
 
-    private decimal? OpenTotal =>
-        _items?.Any(i => i.TargetPrice is not null) == true
-            ? _items.Sum(i => i.TargetPrice ?? 0)
-            : null;
+    private IEnumerable<ShoppingListRow> PricedLists => _lists.Where(l => l.TracksPrices);
 
     private string PriorityName(ShoppingPriority priority) =>
         Localizer[$"Shopping.Priority.{priority}"];
@@ -218,11 +205,14 @@ public sealed partial class ShoppingLists
             _ => Color.Default,
         };
 
-    private string Describe(ShoppingItemRow item)
+    private static string? UnitText(ShoppingItemRow item) =>
+        item.BaseUnit is { } unit ? Units.Abbreviation(unit) : item.Unit;
+
+    private string Describe(ShoppingItemRow item, bool withQuantity = true)
     {
         var parts = new List<string>(3);
 
-        if (item.Quantity is { } quantity)
+        if (withQuantity && item.Quantity is { } quantity)
         {
             parts.Add(
                 item.BaseUnit is { } unit
@@ -236,7 +226,7 @@ public sealed partial class ShoppingLists
             parts.Add(item.Brand);
         }
 
-        if (item.StockBase is { } stock && item.BaseUnit is { } baseUnit)
+        if (item is { StockBase: { } stock, BaseUnit: { } baseUnit })
         {
             parts.Add(Localizer["BookIn.CurrentStock", Units.Format(stock, baseUnit)]);
         }

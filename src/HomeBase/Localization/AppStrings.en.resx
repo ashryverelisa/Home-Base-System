@@ -379,8 +379,20 @@
   <data name="Shopping.EditPrice" xml:space="preserve">
     <value>Set price</value>
   </data>
-  <data name="Shopping.OpenTotal" xml:space="preserve">
-    <value>Open total: {0}</value>
+  <data name="Shopping.Column.Item" xml:space="preserve">
+    <value>Item</value>
+  </data>
+  <data name="Shopping.Column.Quantity" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="Shopping.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Shopping.Unpriced" xml:space="preserve">
+    <value>{0} without price</value>
+  </data>
+  <data name="Shopping.AllListsTotal" xml:space="preserve">
+    <value>All priced lists: {0}</value>
   </data>
   <data name="Shopping.Priority" xml:space="preserve">
     <value>Priority</value>
@@ -410,7 +422,7 @@
     <value>Purchase</value>
   </data>
   <data name="Purchases.Empty" xml:space="preserve">
-    <value>No purchases recorded yet. Type in a receipt by hand — that is where the price data starts.</value>
+    <value>No purchases recorded yet. Type in a receipt by hand that is where the price data starts.</value>
   </data>
   <data name="Purchases.NoStore" xml:space="preserve">
     <value>no store</value>
@@ -476,7 +488,7 @@
     <value>Receipt total</value>
   </data>
   <data name="Purchases.ReceiptTotalHint" xml:space="preserve">
-    <value>Optional — used as a checksum.</value>
+    <value>Optional used as a checksum.</value>
   </data>
   <data name="Purchases.BookIntoStock" xml:space="preserve">
     <value>Book items into stock</value>
@@ -560,7 +572,7 @@
     <value>Confirm and book in</value>
   </data>
   <data name="Review.PromoHint" xml:space="preserve">
-    <value>Price unusually low — promo?</value>
+    <value>Price unusually low promo?</value>
   </data>
   <data name="Review.Unmatched" xml:space="preserve">
     <value>no product recognised</value>
@@ -788,7 +800,7 @@
     <value>Most thrown away</value>
   </data>
   <data name="Analytics.NoWaste" xml:space="preserve">
-    <value>Nothing booked as waste — good.</value>
+    <value>Nothing booked as waste good.</value>
   </data>
   <data name="Analytics.Reach" xml:space="preserve">
     <value>Days of stock left</value>
@@ -872,7 +884,7 @@
     <value>Quantity ({0})</value>
   </data>
   <data name="Recipes.NoQuantity" xml:space="preserve">
-    <value>no quantity — not deducted</value>
+    <value>no quantity not deducted</value>
   </data>
   <data name="Recipes.Optional" xml:space="preserve">
     <value>optional</value>
@@ -956,7 +968,7 @@
     <value>cost {0}</value>
   </data>
   <data name="Plan.CookHint" xml:space="preserve">
-    <value>Deduction for {0} servings — check and adjust.</value>
+    <value>Deduction for {0} servings check and adjust.</value>
   </data>
   <data name="Plan.Available" xml:space="preserve">
     <value>in stock {0}</value>
@@ -977,7 +989,7 @@
     <value>needed {0}</value>
   </data>
   <data name="Plan.UntrackedNeed" xml:space="preserve">
-    <value>no quantity — just a reminder</value>
+    <value>no quantity just a reminder</value>
   </data>
   <data name="Plan.Covered" xml:space="preserve">
     <value>covered</value>
@@ -989,7 +1001,7 @@
     <value>{0} items on the list.</value>
   </data>
   <data name="Plan.NoNeeds" xml:space="preserve">
-    <value>Nothing needed — either nothing planned or everything is there.</value>
+    <value>Nothing needed either nothing planned or everything is there.</value>
   </data>
   <data name="Unit.Kilogram.Abbreviation" xml:space="preserve">
     <value>kg</value>
