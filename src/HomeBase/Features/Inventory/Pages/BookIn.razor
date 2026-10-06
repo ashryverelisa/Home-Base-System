@@ -125,6 +125,15 @@ else
                                Clearable="true"
                                HelperText="@ShelfLifeHint"/>
             </MudItem>
+
+            @if (LearnableShelfLife is { } shelfLifeDays)
+            {
+                <MudItem xs="12" sm="6" Class="d-flex align-center">
+                    <MudCheckBox @bind-Value="_rememberShelfLife"
+                                 Color="Color.Primary"
+                                 Label="@Localizer["BookIn.RememberShelfLife", shelfLifeDays]"/>
+                </MudItem>
+            }
         </MudGrid>
     </MudPaper>
 

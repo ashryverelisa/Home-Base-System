@@ -21,6 +21,7 @@ public partial class BookIn
     private decimal _quantityBase;
     private int? _locationId;
     private DateOnly? _bestBefore;
+    private bool _rememberShelfLife;
     private string? _error;
     private bool _busy;
 
@@ -29,6 +30,11 @@ public partial class BookIn
         get => _bestBefore?.ToDateTime(TimeOnly.MinValue);
         set => _bestBefore = value is { } date ? DateOnly.FromDateTime(date) : null;
     }
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+
+    private int? LearnableShelfLife =>
+        ShelfLife.Learnable(_bestBefore, _selected?.DefaultShelfLifeDays, Today);
 
     private string ShelfLifeHint =>
         _selected?.DefaultShelfLifeDays is { } days
@@ -93,9 +99,8 @@ public partial class BookIn
         _packages = 1;
         _quantityBase = _selected.PackageSize;
         _locationId = _selected.DefaultLocationId;
-        _bestBefore = _selected.DefaultShelfLifeDays is { } days
-            ? DateOnly.FromDateTime(DateTime.Today).AddDays(days)
-            : null;
+        _bestBefore = _selected.DefaultShelfLifeDays is { } days ? Today.AddDays(days) : null;
+        _rememberShelfLife = false;
         _error = null;
     }
 
@@ -138,6 +143,11 @@ public partial class BookIn
             await Inventory.BookInAsync(
                 new BookInRequest(_selected.Id, _quantityBase, _locationId, _bestBefore)
             );
+
+            if (_rememberShelfLife && LearnableShelfLife is { } shelfLifeDays)
+            {
+                await Catalog.LearnShelfLifeAsync(_selected.Id, shelfLifeDays);
+            }
 
             Navigation.NavigateTo("/inventory");
         }

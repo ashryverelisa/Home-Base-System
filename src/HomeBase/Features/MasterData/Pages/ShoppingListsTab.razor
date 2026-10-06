@@ -1,0 +1,114 @@
+@inherits MasterDataTabBase
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-3">
+    <MudText Typo="Typo.body2">@Localizer["MasterData.ShoppingListsHint"]</MudText>
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@New">
+        @Localizer["MasterData.Add"]
+    </MudButton>
+</div>
+
+@if (_editing is not null)
+{
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="7">
+                <MudTextField @bind-Value="_editing.Name"
+                              Label="@Localizer["MasterData.Name"]"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              AutoFocus="true"/>
+            </MudItem>
+            <MudItem xs="12" sm="5">
+                <MudSelect @bind-Value="_editing.Kind"
+                           Label="@Localizer["MasterData.Kind"]"
+                           HelperText="@Localizer["MasterData.ListKindHint"]"
+                           Variant="Variant.Outlined">
+                    @foreach (var kind in Enum.GetValues<ShoppingListKind>())
+                    {
+                        <MudSelectItem T="ShoppingListKind" Value="kind">@Localizer[$"ShoppingListKind.{kind}"]</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        <MasterDataFormActions Error="@Error"
+                               Busy="Busy"
+                               OnSave="SaveAsync"
+                               OnCancel="@Close"/>
+    </MudPaper>
+}
+else if (Error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mb-4">@Error</MudAlert>
+}
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudPaper Outlined="true">
+        <MudList T="int">
+            @for (var index = 0; index < _rows.Count; index++)
+            {
+                var row = _rows[index];
+                var isFirst = index == 0;
+                var isLast = index == _rows.Count - 1;
+
+                <MudListItem T="int" Value="row.Id" OnClick="() => Edit(row)">
+                    <div class="d-flex justify-space-between align-center gap-2">
+                        <div class="@(row.Archived ? "mud-text-disabled" : null)">
+                            <MudText Typo="Typo.body1">
+                                @row.Name
+                                @if (row.IsDefault)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" Class="ml-2">
+                                        @Localizer["MasterData.Default"]
+                                    </MudChip>
+                                }
+                                @if (row.Archived)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Class="ml-2">
+                                        @Localizer["MasterData.Archived"]
+                                    </MudChip>
+                                }
+                            </MudText>
+                            <MudText Typo="Typo.caption">
+                                @Localizer[$"ShoppingListKind.{row.Kind}"]
+                                · @Localizer["MasterData.OpenCount", row.OpenCount]
+                            </MudText>
+                        </div>
+                        <div class="d-flex align-center" @onclick:stopPropagation="true">
+                            <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
+                                           Size="Size.Small"
+                                           Disabled="isFirst || Busy"
+                                           aria-label="@Localizer["MasterData.MoveUp"]"
+                                           OnClick="() => MoveAsync(row, -1)"/>
+                            <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
+                                           Size="Size.Small"
+                                           Disabled="isLast || Busy"
+                                           aria-label="@Localizer["MasterData.MoveDown"]"
+                                           OnClick="() => MoveAsync(row, 1)"/>
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                                     Size="Size.Small"
+                                     AriaLabel="@Localizer["MasterData.More"]">
+                                <MudMenuItem Disabled="row.IsDefault || row.Archived"
+                                             OnClick="() => MakeDefaultAsync(row)">
+                                    @Localizer["MasterData.MakeDefault"]
+                                </MudMenuItem>
+                                <MudMenuItem Disabled="row.IsDefault"
+                                             OnClick="() => ToggleArchivedAsync(row)">
+                                    @(row.Archived ? Localizer["MasterData.Restore"] : Localizer["MasterData.Archive"])
+                                </MudMenuItem>
+                            </MudMenu>
+                        </div>
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}

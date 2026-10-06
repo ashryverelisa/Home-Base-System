@@ -1,0 +1,90 @@
+@inherits MasterDataTabBase
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-3">
+    <MudText Typo="Typo.body2">@Localizer["MasterData.StoresHint"]</MudText>
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@New">
+        @Localizer["MasterData.Add"]
+    </MudButton>
+</div>
+
+@if (_editing is not null)
+{
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_editing.Name"
+                              Label="@Localizer["MasterData.Name"]"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              AutoFocus="true"/>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_editing.Chain"
+                              Label="@Localizer["MasterData.Chain"]"
+                              Variant="Variant.Outlined"/>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_editing.Address"
+                              Label="@Localizer["MasterData.Address"]"
+                              Variant="Variant.Outlined"/>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_editing.TaxId"
+                              Label="@Localizer["MasterData.TaxId"]"
+                              HelperText="@Localizer["MasterData.TaxIdHint"]"
+                              Variant="Variant.Outlined"/>
+            </MudItem>
+            <MudItem xs="12" sm="2" Class="d-flex align-center">
+                <MudSwitch @bind-Value="_editing.IsOnline"
+                           Color="Color.Primary"
+                           Label="@Localizer["MasterData.Online"]"/>
+            </MudItem>
+        </MudGrid>
+
+        <MasterDataFormActions Error="@Error"
+                               Busy="Busy"
+                               CanDelete="_editing.Id != 0"
+                               OnSave="SaveAsync"
+                               OnCancel="@Close"
+                               OnDelete="DeleteAsync"/>
+    </MudPaper>
+}
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else if (_rows.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">@Localizer["MasterData.NoStores"]</MudAlert>
+}
+else
+{
+    <MudPaper Outlined="true">
+        <MudList T="int">
+            @foreach (var row in _rows)
+            {
+                <MudListItem T="int"
+                             Value="row.Id"
+                             Icon="@(row.IsOnline ? Icons.Material.Filled.Language : Icons.Material.Filled.Storefront)"
+                             OnClick="() => Edit(row)">
+                    <MudText Typo="Typo.body1">@row.Name</MudText>
+                    <MudText Typo="Typo.caption">
+                        @if (!string.IsNullOrWhiteSpace(row.Chain))
+                        {
+                            <span>@row.Chain · </span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(row.Address))
+                        {
+                            <span>@row.Address · </span>
+                        }
+                        <span>@Localizer["MasterData.PurchaseCount", row.PurchaseCount]</span>
+                    </MudText>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}

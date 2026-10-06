@@ -1,0 +1,31 @@
+@inject IStringLocalizer<AppStrings> Localizer
+
+@if (Error is not null)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4">@Error</MudAlert>
+}
+
+<div class="d-flex flex-wrap gap-3 mt-4">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Disabled="Busy"
+               OnClick="@OnSave">
+        @Localizer["Common.Save"]
+    </MudButton>
+    <MudButton Variant="Variant.Outlined"
+               Color="Color.Default"
+               OnClick="@OnCancel">
+        @Localizer["Common.Cancel"]
+    </MudButton>
+    @if (CanDelete)
+    {
+        <MudSpacer/>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Delete"
+                   Disabled="Busy"
+                   OnClick="@OnDelete">
+            @Localizer["MasterData.Delete"]
+        </MudButton>
+    }
+</div>

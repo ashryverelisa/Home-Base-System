@@ -1,0 +1,21 @@
+@page "/master-data"
+@inject IStringLocalizer<AppStrings> Localizer
+
+<PageTitle>@Localizer["MasterData.Title"]</PageTitle>
+
+<MudText Typo="Typo.h4" HtmlTag="h1" Class="mb-4">@Localizer["MasterData.Title"]</MudText>
+
+<MudTabs Outlined="true" Rounded="true" TabPanelsClass="pa-4" ApplyEffectsToContainer="true">
+    <MudTabPanel Text="@Localizer["MasterData.Locations"]" Icon="@Icons.Material.Filled.Kitchen">
+        <LocationsTab/>
+    </MudTabPanel>
+    <MudTabPanel Text="@Localizer["MasterData.Categories"]" Icon="@Icons.Material.Filled.Category">
+        <CategoriesTab/>
+    </MudTabPanel>
+    <MudTabPanel Text="@Localizer["MasterData.Stores"]" Icon="@Icons.Material.Filled.Storefront">
+        <StoresTab/>
+    </MudTabPanel>
+    <MudTabPanel Text="@Localizer["MasterData.ShoppingLists"]" Icon="@Icons.Material.Filled.Checklist">
+        <ShoppingListsTab/>
+    </MudTabPanel>
+</MudTabs>

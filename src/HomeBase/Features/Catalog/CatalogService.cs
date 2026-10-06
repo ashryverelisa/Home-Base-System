@@ -77,6 +77,15 @@ public sealed class CatalogService(
         return ProductSaveResult.Ok(product.Id);
     }
 
+    public async Task LearnShelfLifeAsync(int productId, int days, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        await db
+            .Products.Where(p => p.Id == productId && p.DefaultShelfLifeDays == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.DefaultShelfLifeDays, days), ct);
+    }
+
     public async Task<IReadOnlyList<Category>> GetCategoriesAsync(CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);

@@ -31,4 +31,29 @@ public class ShelfLifeTests
     {
         Assert.Null(ShelfLife.Resolve(null, null, BookedOn));
     }
+
+    [Fact]
+    public void Learnable_EnteredDateWithoutDefault_ReturnsDaysFromBooking()
+    {
+        Assert.Equal(21, ShelfLife.Learnable(new DateOnly(2026, 3, 31), null, BookedOn));
+    }
+
+    [Fact]
+    public void Learnable_SameDay_ReturnsZero()
+    {
+        Assert.Equal(0, ShelfLife.Learnable(BookedOn, null, BookedOn));
+    }
+
+    [Fact]
+    public void Learnable_ProductAlreadyHasDefault_ReturnsNull()
+    {
+        Assert.Null(ShelfLife.Learnable(new DateOnly(2026, 3, 31), 7, BookedOn));
+    }
+
+    [Fact]
+    public void Learnable_NoDateOrDateInPast_ReturnsNull()
+    {
+        Assert.Null(ShelfLife.Learnable(null, null, BookedOn));
+        Assert.Null(ShelfLife.Learnable(new DateOnly(2026, 3, 9), null, BookedOn));
+    }
 }

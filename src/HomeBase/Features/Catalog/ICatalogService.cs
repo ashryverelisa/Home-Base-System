@@ -12,6 +12,8 @@ public interface ICatalogService
 
     Task<ProductSaveResult> SaveAsync(Product product, CancellationToken ct = default);
 
+    Task LearnShelfLifeAsync(int productId, int days, CancellationToken ct = default);
+
     Task<IReadOnlyList<Category>> GetCategoriesAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<StorageLocation>> GetLocationsAsync(CancellationToken ct = default);

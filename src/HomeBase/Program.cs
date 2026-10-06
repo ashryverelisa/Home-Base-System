@@ -6,6 +6,7 @@ using HomeBase.Features.Analytics;
 using HomeBase.Features.Assets;
 using HomeBase.Features.Catalog;
 using HomeBase.Features.Ingest;
+using HomeBase.Features.MasterData;
 using HomeBase.Features.Inventory;
 using HomeBase.Features.MealPlan;
 using HomeBase.Features.Purchases;
@@ -58,6 +59,7 @@ builder.Services.AddScoped<IReceiptIngestService, ReceiptIngestService>();
 builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IRecipeIngestService, RecipeIngestService>();
 builder.Services.AddScoped<IMealPlanService, MealPlanService>();
+builder.Services.AddScoped<IMasterDataService, MasterDataService>();
 
 builder.Services.AddHttpClient<IOpenFoodFacts, OpenFoodFactsClient>(client =>
 {

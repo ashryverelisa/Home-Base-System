@@ -1105,4 +1105,181 @@
   <data name="ProductEdit.GtinExists" xml:space="preserve">
     <value>Zu diesem Code gibt es schon ein Produkt:</value>
   </data>
+  <data name="Nav.MasterData" xml:space="preserve">
+    <value>Stammdaten</value>
+  </data>
+  <data name="BookIn.RememberShelfLife" xml:space="preserve">
+    <value>{0} Tage als Standard-Haltbarkeit merken</value>
+  </data>
+  <data name="MasterData.Title" xml:space="preserve">
+    <value>Stammdaten</value>
+  </data>
+  <data name="MasterData.Locations" xml:space="preserve">
+    <value>Lagerorte</value>
+  </data>
+  <data name="MasterData.Categories" xml:space="preserve">
+    <value>Kategorien</value>
+  </data>
+  <data name="MasterData.Stores" xml:space="preserve">
+    <value>Händler</value>
+  </data>
+  <data name="MasterData.ShoppingLists" xml:space="preserve">
+    <value>Einkaufslisten</value>
+  </data>
+  <data name="MasterData.LocationsHint" xml:space="preserve">
+    <value>Zwei Ebenen: Raum, darunter Behälter. Nach der Zone wird der Bestand gruppiert.</value>
+  </data>
+  <data name="MasterData.CategoriesHint" xml:space="preserve">
+    <value>Zwei Ebenen: Hauptkategorie, darunter Unterkategorie.</value>
+  </data>
+  <data name="MasterData.StoresHint" xml:space="preserve">
+    <value>Händler entstehen auch automatisch beim Erfassen von Einkäufen und Bons.</value>
+  </data>
+  <data name="MasterData.ShoppingListsHint" xml:space="preserve">
+    <value>Listen werden archiviert statt gelöscht. Die Standardliste nimmt alles auf, was keiner anderen Liste zugeordnet ist.</value>
+  </data>
+  <data name="MasterData.Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="MasterData.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="MasterData.Parent" xml:space="preserve">
+    <value>Übergeordnet</value>
+  </data>
+  <data name="MasterData.NoParent" xml:space="preserve">
+    <value>Keine (oberste Ebene)</value>
+  </data>
+  <data name="MasterData.ParentLocked" xml:space="preserve">
+    <value>Hat Untereinträge und bleibt deshalb auf der obersten Ebene.</value>
+  </data>
+  <data name="MasterData.Zone" xml:space="preserve">
+    <value>Zone</value>
+  </data>
+  <data name="MasterData.Kind" xml:space="preserve">
+    <value>Art</value>
+  </data>
+  <data name="MasterData.Chain" xml:space="preserve">
+    <value>Kette</value>
+  </data>
+  <data name="MasterData.Address" xml:space="preserve">
+    <value>Adresse</value>
+  </data>
+  <data name="MasterData.TaxId" xml:space="preserve">
+    <value>USt-IdNr.</value>
+  </data>
+  <data name="MasterData.TaxIdHint" xml:space="preserve">
+    <value>Ordnet Bons automatisch diesem Händler zu.</value>
+  </data>
+  <data name="MasterData.Online" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="MasterData.NoStores" xml:space="preserve">
+    <value>Noch keine Händler erfasst.</value>
+  </data>
+  <data name="MasterData.ListKindHint" xml:space="preserve">
+    <value>Bestimmt, welche Nachschub-Positionen auf dieser Liste landen.</value>
+  </data>
+  <data name="MasterData.Default" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="MasterData.Archived" xml:space="preserve">
+    <value>Archiviert</value>
+  </data>
+  <data name="MasterData.MakeDefault" xml:space="preserve">
+    <value>Als Standard festlegen</value>
+  </data>
+  <data name="MasterData.Archive" xml:space="preserve">
+    <value>Archivieren</value>
+  </data>
+  <data name="MasterData.Restore" xml:space="preserve">
+    <value>Wiederherstellen</value>
+  </data>
+  <data name="MasterData.MoveUp" xml:space="preserve">
+    <value>Nach oben</value>
+  </data>
+  <data name="MasterData.MoveDown" xml:space="preserve">
+    <value>Nach unten</value>
+  </data>
+  <data name="MasterData.More" xml:space="preserve">
+    <value>Weitere Aktionen</value>
+  </data>
+  <data name="MasterData.Delete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="MasterData.DeleteTitle" xml:space="preserve">
+    <value>Löschen?</value>
+  </data>
+  <data name="MasterData.DeleteConfirm" xml:space="preserve">
+    <value>„{0}“ wirklich löschen?</value>
+  </data>
+  <data name="MasterData.LotCount" xml:space="preserve">
+    <value>{0} Chargen</value>
+  </data>
+  <data name="MasterData.AssetCount" xml:space="preserve">
+    <value>{0} Geräte</value>
+  </data>
+  <data name="MasterData.ProductCount" xml:space="preserve">
+    <value>{0} Produkte</value>
+  </data>
+  <data name="MasterData.PurchaseCount" xml:space="preserve">
+    <value>{0} Einkäufe</value>
+  </data>
+  <data name="MasterData.OpenCount" xml:space="preserve">
+    <value>{0} offen</value>
+  </data>
+  <data name="MasterData.NameRequired" xml:space="preserve">
+    <value>Bitte einen Namen angeben.</value>
+  </data>
+  <data name="MasterData.NameTaken" xml:space="preserve">
+    <value>„{0}“ gibt es hier schon.</value>
+  </data>
+  <data name="MasterData.NotFound" xml:space="preserve">
+    <value>Der Eintrag existiert nicht mehr.</value>
+  </data>
+  <data name="MasterData.InvalidParent" xml:space="preserve">
+    <value>Es gibt nur zwei Ebenen: Übergeordnet kann nur ein Eintrag der obersten Ebene sein, und ein Eintrag mit Untereinträgen bleibt oben.</value>
+  </data>
+  <data name="MasterData.HasChildren" xml:space="preserve">
+    <value>Hat noch Untereinträge. Bitte diese zuerst löschen oder umhängen.</value>
+  </data>
+  <data name="MasterData.LocationInUse" xml:space="preserve">
+    <value>Hier liegen noch {0} Chargen und {1} Geräte. Bitte zuerst umlagern.</value>
+  </data>
+  <data name="MasterData.CategoryInUse" xml:space="preserve">
+    <value>Wird noch von {0} Produkten und {1} Geräten verwendet.</value>
+  </data>
+  <data name="MasterData.StoreInUse" xml:space="preserve">
+    <value>Hat {0} Einkäufe und kann deshalb nicht gelöscht werden.</value>
+  </data>
+  <data name="MasterData.DefaultCannotBeArchived" xml:space="preserve">
+    <value>Die Standardliste kann nicht archiviert werden. Lege zuerst eine andere Liste als Standard fest.</value>
+  </data>
+  <data name="MasterData.ArchivedCannotBeDefault" xml:space="preserve">
+    <value>Eine archivierte Liste kann nicht Standard sein.</value>
+  </data>
+  <data name="CategoryKind.Food" xml:space="preserve">
+    <value>Lebensmittel</value>
+  </data>
+  <data name="CategoryKind.Tech" xml:space="preserve">
+    <value>Technik</value>
+  </data>
+  <data name="CategoryKind.Household" xml:space="preserve">
+    <value>Haushalt</value>
+  </data>
+  <data name="CategoryKind.Other" xml:space="preserve">
+    <value>Sonstiges</value>
+  </data>
+  <data name="ShoppingListKind.Groceries" xml:space="preserve">
+    <value>Lebensmittel</value>
+  </data>
+  <data name="ShoppingListKind.Tech" xml:space="preserve">
+    <value>Technik</value>
+  </data>
+  <data name="ShoppingListKind.Household" xml:space="preserve">
+    <value>Haushalt</value>
+  </data>
+  <data name="ShoppingListKind.Other" xml:space="preserve">
+    <value>Sonstiges</value>
+  </data>
 </root>

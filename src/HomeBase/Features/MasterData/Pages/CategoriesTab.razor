@@ -1,0 +1,88 @@
+@inherits MasterDataTabBase
+
+<div class="d-flex justify-space-between align-center flex-wrap gap-3 mb-3">
+    <MudText Typo="Typo.body2">@Localizer["MasterData.CategoriesHint"]</MudText>
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@New">
+        @Localizer["MasterData.Add"]
+    </MudButton>
+</div>
+
+@if (_editing is not null)
+{
+    <MudPaper Outlined="true" Class="pa-4 mb-4">
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="5">
+                <MudTextField @bind-Value="_editing.Name"
+                              Label="@Localizer["MasterData.Name"]"
+                              Variant="Variant.Outlined"
+                              Required="true"
+                              AutoFocus="true"/>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect @bind-Value="_editing.ParentId"
+                           Label="@Localizer["MasterData.Parent"]"
+                           Variant="Variant.Outlined"
+                           Disabled="EditingHasChildren"
+                           HelperText="@(EditingHasChildren ? Localizer["MasterData.ParentLocked"].Value : null)">
+                    <MudSelectItem T="int?" Value="@(null)">@Localizer["MasterData.NoParent"]</MudSelectItem>
+                    @foreach (var parent in ParentOptions)
+                    {
+                        <MudSelectItem T="int?" Value="@(parent.Id)">@parent.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudSelect @bind-Value="_editing.Kind"
+                           Label="@Localizer["MasterData.Kind"]"
+                           Variant="Variant.Outlined">
+                    @foreach (var kind in Enum.GetValues<CategoryKind>())
+                    {
+                        <MudSelectItem T="CategoryKind" Value="kind">@Localizer[$"CategoryKind.{kind}"]</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        <MasterDataFormActions Error="@Error"
+                               Busy="Busy"
+                               CanDelete="_editing.Id != 0"
+                               OnSave="SaveAsync"
+                               OnCancel="@Close"
+                               OnDelete="DeleteAsync"/>
+    </MudPaper>
+}
+
+@if (_rows is null)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+}
+else
+{
+    <MudPaper Outlined="true">
+        <MudList T="int">
+            @foreach (var row in _rows)
+            {
+                <MudListItem T="int"
+                             Value="row.Id"
+                             Class="@(row.ParentId is null ? null : "pl-10")"
+                             OnClick="() => Edit(row)">
+                    <MudText Typo="Typo.body1">@row.Name</MudText>
+                    <MudText Typo="Typo.caption">
+                        @Localizer[$"CategoryKind.{row.Kind}"]
+                        @if (row.ProductCount > 0)
+                        {
+                            <span> · @Localizer["MasterData.ProductCount", row.ProductCount]</span>
+                        }
+                        @if (row.AssetCount > 0)
+                        {
+                            <span> · @Localizer["MasterData.AssetCount", row.AssetCount]</span>
+                        }
+                    </MudText>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}
