@@ -9,6 +9,8 @@ public sealed partial class RecipeEdit
 {
     private Recipe? _recipe;
     private IReadOnlyList<IngredientLine> _ingredients = [];
+    private IReadOnlyList<IngredientReview> _reviews = [];
+    private readonly Dictionary<int, ProductRow?> _choices = [];
     private ProductRow? _picked;
     private string _ingredientText = string.Empty;
     private string _tagInput = string.Empty;
@@ -36,7 +38,55 @@ public sealed partial class RecipeEdit
 
         if (Id > 0)
         {
-            _ingredients = await Recipes.GetIngredientsAsync(Id);
+            await LoadIngredientsAsync();
+        }
+    }
+
+    private async Task LoadIngredientsAsync()
+    {
+        _ingredients = await Recipes.GetIngredientsAsync(Id);
+        _reviews = await Recipes.GetReviewAsync(Id);
+
+        _choices.Clear();
+
+        foreach (var review in _reviews)
+        {
+            _choices[review.IngredientId] = review.Suggestion;
+        }
+    }
+
+    private async Task AssignAsync(IngredientReview review)
+    {
+        if (_choices.GetValueOrDefault(review.IngredientId) is not { } product)
+        {
+            return;
+        }
+
+        _busy = true;
+
+        try
+        {
+            await Recipes.AssignIngredientAsync(review.IngredientId, product.Id);
+            await LoadIngredientsAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task KeepAsTextAsync(IngredientReview review)
+    {
+        _busy = true;
+
+        try
+        {
+            await Recipes.KeepAsTextAsync(review.IngredientId);
+            await LoadIngredientsAsync();
+        }
+        finally
+        {
+            _busy = false;
         }
     }
 
@@ -101,14 +151,14 @@ public sealed partial class RecipeEdit
         _quantity = null;
         _optional = false;
 
-        _ingredients = await Recipes.GetIngredientsAsync(Id);
+        await LoadIngredientsAsync();
     }
 
     private async Task RemoveIngredientAsync(IngredientLine ingredient)
     {
         await Recipes.RemoveIngredientAsync(ingredient.Id);
 
-        _ingredients = await Recipes.GetIngredientsAsync(Id);
+        await LoadIngredientsAsync();
     }
 
     private async Task CookNowAsync()

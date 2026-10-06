@@ -21,6 +21,7 @@ public class RecipeIngredientConfiguration : IEntityTypeConfiguration<RecipeIngr
         builder.Property(x => x.Note).HasMaxLength(200);
 
         builder.Property(x => x.QuantityBase).HasPrecision(12, 3);
+        builder.Property(x => x.NeedsReview).HasDefaultValue(false);
 
         builder
             .HasOne(x => x.Recipe)

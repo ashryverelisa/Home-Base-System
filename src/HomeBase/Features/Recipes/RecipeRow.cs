@@ -11,7 +11,8 @@ public sealed record RecipeRow(
     int? CookMinutes,
     string? ImageUrl,
     List<string> Tags,
-    int IngredientCount
+    int IngredientCount,
+    int ReviewCount
 )
 {
     public static readonly Expression<Func<Recipe, RecipeRow>> Projection =
@@ -23,7 +24,8 @@ public sealed record RecipeRow(
             recipe.CookMinutes,
             recipe.ImageUrl,
             recipe.Tags,
-            recipe.Ingredients.Count
+            recipe.Ingredients.Count,
+            recipe.Ingredients.Count(i => i.NeedsReview)
         );
 
     public int? TotalMinutes =>

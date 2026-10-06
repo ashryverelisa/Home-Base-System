@@ -1,4 +1,5 @@
 using HomeBase.Database.Entities;
+using HomeBase.Database.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Database.Queries;
@@ -16,10 +17,20 @@ public static class StockLotQueries
         IReadOnlyCollection<int> locationIds
     ) => lots.Where(l => l.LocationId != null && locationIds.Contains(l.LocationId.Value));
 
-    public static IQueryable<StockLot> BestBeforeUntil(
+    public static IQueryable<StockLot> DueBy(
         this IQueryable<StockLot> lots,
-        DateOnly until
-    ) => lots.Where(l => l.BestBefore != null && l.BestBefore <= until);
+        DateOnly until,
+        DateOnly freezerUntil
+    ) =>
+        lots.Where(l =>
+            l.BestBefore != null
+            && l.BestBefore
+                <= (
+                    l.Location != null && l.Location.Zone == StorageZone.Freezer
+                        ? freezerUntil
+                        : until
+                )
+        );
 
     public static IOrderedQueryable<StockLot> FirstExpiredFirstOut(
         this IQueryable<StockLot> lots

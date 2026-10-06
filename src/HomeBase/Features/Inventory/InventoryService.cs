@@ -2,11 +2,13 @@ using HomeBase.Database;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
 using HomeBase.Database.Queries;
+using HomeBase.Features.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeBase.Features.Inventory;
 
-public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factory) : IInventoryService
+public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factory)
+    : IInventoryService
 {
     public async Task<IReadOnlyList<StockLotView>> GetStockAsync(
         int? locationId = null,
@@ -23,10 +25,17 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
             lots = lots.InLocations(await db.StorageLocations.BranchIdsAsync(id, ct));
         }
 
-        if (withinDays is { } days)
-        {
-            lots = lots.BestBeforeUntil(DateOnly.FromDateTime(DateTime.Today).AddDays(days));
-        }
+        if (withinDays is not { } days)
+            return await lots.FirstExpiredFirstOut()
+                .Select(StockLotView.Projection)
+                .ToListAsync(ct);
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        lots = lots.DueBy(
+            today.AddDays(days),
+            today.AddDays(Zones.WarningDays(StorageZone.Freezer, days))
+        );
 
         return await lots.FirstExpiredFirstOut().Select(StockLotView.Projection).ToListAsync(ct);
     }
@@ -219,29 +228,37 @@ public sealed class InventoryService(IDbContextFactory<HomeBaseDbContext> factor
         await db.SaveChangesAsync(ct);
     }
 
-    public async Task MoveLotAsync(long lotId, int? locationId, CancellationToken ct = default)
+    public async Task MoveLotAsync(LotMove move, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
         var lot =
-            await db.StockLots.FindAsync([lotId], ct)
-            ?? throw new InvalidOperationException($"Stock lot {lotId} does not exist.");
+            await db.StockLots.FindAsync([move.LotId], ct)
+            ?? throw new InvalidOperationException($"Stock lot {move.LotId} does not exist.");
 
-        if (lot.LocationId == locationId)
+        var newDate = move.ReplaceBestBefore && lot.BestBefore != move.BestBefore;
+
+        if (lot.LocationId == move.LocationId && !newDate)
         {
             return;
         }
 
-        lot.LocationId = locationId;
+        lot.LocationId = move.LocationId;
+
+        if (newDate)
+        {
+            lot.BestBefore = move.BestBefore;
+        }
 
         db.StockMovements.Add(
             new StockMovement
             {
-                LotId = lotId,
+                LotId = move.LotId,
                 ProductId = lot.ProductId,
                 Type = StockMovementType.Move,
                 QuantityDelta = 0,
                 Reason = "Umgelagert",
+                Note = newDate ? "MHD neu gesetzt" : null,
             }
         );
 

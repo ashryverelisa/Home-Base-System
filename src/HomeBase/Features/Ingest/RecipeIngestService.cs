@@ -122,6 +122,7 @@ public sealed partial class RecipeIngestService(IDbContextFactory<HomeBaseDbCont
             else
             {
                 ingredient.FreeText = incoming.Text?.Trim() ?? parsed.Name;
+                ingredient.NeedsReview = true;
             }
 
             recipe.Ingredients.Add(ingredient);
@@ -180,7 +181,7 @@ public sealed partial class RecipeIngestService(IDbContextFactory<HomeBaseDbCont
         return new ParsedIngredient(match.Groups["name"].Value.Trim(), quantity, unit);
     }
 
-    private static async Task<decimal?> ToBaseQuantityAsync(
+    internal static async Task<decimal?> ToBaseQuantityAsync(
         HomeBaseDbContext db,
         int productId,
         decimal? quantity,

@@ -21,4 +21,6 @@ public class ShoppingListItem
     public DateTimeOffset? BoughtAt { get; set; }
     public long? PurchaseItemId { get; set; }
     public PurchaseItem? PurchaseItem { get; set; }
+    public DateOnly? PlanFrom { get; set; }
+    public DateOnly? PlanTo { get; set; }
 }

@@ -18,6 +18,16 @@ public static class ShoppingListQueries
         int listId
     ) => items.Where(i => i.ListId == listId);
 
+    public static IQueryable<ShoppingListItem> FromMealPlanOverlapping(
+        this IQueryable<ShoppingListItem> items,
+        DateOnly from,
+        DateOnly to
+    ) =>
+        items.Where(i =>
+            i.AddedBy == ShoppingListItemOrigin.MealPlan
+            && (i.PlanFrom == null || (i.PlanFrom <= to && i.PlanTo >= from))
+        );
+
     public static IQueryable<ShoppingListItem> Open(this IQueryable<ShoppingListItem> items) =>
         items.Where(i => i.Status == ShoppingListItemStatus.Open);
 
@@ -37,11 +47,7 @@ public static class ShoppingListQueries
         int listId,
         int productId,
         CancellationToken ct = default
-    ) =>
-        items
-            .OnList(listId)
-            .Open()
-            .FirstOrDefaultAsync(i => i.ProductId == productId, ct);
+    ) => items.OnList(listId).Open().FirstOrDefaultAsync(i => i.ProductId == productId, ct);
 
     public static Task<Dictionary<int, int>> OpenCountsByListAsync(
         this IQueryable<ShoppingListItem> items,

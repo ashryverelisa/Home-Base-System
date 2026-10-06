@@ -121,7 +121,7 @@ else
 
         _total = all.Count;
         _expired = all.Count(l => l.IsExpired);
-        _expiring = [.. all.Where(l => l.DaysLeft is <= 7)];
+        _expiring = [.. all.Where(l => l.IsDueWithin(7))];
         _openItems = (await Shopping.GetListsAsync()).Sum(l => l.OpenCount);
     }
 }

@@ -41,7 +41,7 @@ public interface IInventoryService
         CancellationToken ct = default
     );
 
-    Task MoveLotAsync(long lotId, int? locationId, CancellationToken ct = default);
+    Task MoveLotAsync(LotMove move, CancellationToken ct = default);
 
     Task OpenLotAsync(long lotId, CancellationToken ct = default);
 

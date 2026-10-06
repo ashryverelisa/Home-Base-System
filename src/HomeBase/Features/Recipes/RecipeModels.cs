@@ -1,4 +1,5 @@
 using HomeBase.Database.Enums;
+using HomeBase.Features.Catalog;
 
 namespace HomeBase.Features.Recipes;
 
@@ -17,10 +18,18 @@ public sealed record IngredientLine(
     BaseUnit? BaseUnit,
     decimal? QuantityBase,
     bool IsOptional,
-    string? Note
+    string? Note,
+    bool NeedsReview
 )
 {
     public string Label => ProductName ?? FreeText ?? string.Empty;
 
     public bool IsTracked => ProductId is not null && QuantityBase is > 0;
 }
+
+public sealed record IngredientReview(
+    int IngredientId,
+    string Text,
+    string Name,
+    ProductRow? Suggestion
+);

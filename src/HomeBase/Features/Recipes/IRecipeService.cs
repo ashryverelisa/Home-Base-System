@@ -28,4 +28,17 @@ public interface IRecipeService
     );
 
     Task RemoveIngredientAsync(int ingredientId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<IngredientReview>> GetReviewAsync(
+        int recipeId,
+        CancellationToken ct = default
+    );
+
+    Task<bool> AssignIngredientAsync(
+        int ingredientId,
+        int productId,
+        CancellationToken ct = default
+    );
+
+    Task KeepAsTextAsync(int ingredientId, CancellationToken ct = default);
 }

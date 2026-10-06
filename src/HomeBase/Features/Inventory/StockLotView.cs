@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
 using HomeBase.Database.Entities;
 using HomeBase.Database.Enums;
+using HomeBase.Features.Common;
 
 namespace HomeBase.Features.Inventory;
 
@@ -44,7 +45,10 @@ public sealed record StockLotView(
 
     public bool IsExpired => DaysLeft is < 0;
 
-    public bool ExpiresSoon => DaysLeft is >= 0 and <= ExpiryWarningDays;
+    public bool ExpiresSoon => !IsExpired && IsDueWithin(ExpiryWarningDays);
+
+    public bool IsDueWithin(int days) =>
+        DaysLeft is { } left && left <= Zones.WarningDays(LocationZone, days);
 
     public bool IsOpened => OpenedAt is not null;
 

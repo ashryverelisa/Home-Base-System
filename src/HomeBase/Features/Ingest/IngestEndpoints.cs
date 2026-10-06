@@ -57,6 +57,7 @@ public static class IngestEndpoints
     internal static async Task<IResult> PostRecipeAsync(
         RecipeRequest request,
         IRecipeIngestService recipes,
+        HttpContext http,
         CancellationToken ct
     )
     {
@@ -72,6 +73,7 @@ public static class IngestEndpoints
             recipeId = result.RecipeId,
             matched = result.Matched,
             unmatched = result.Unmatched,
+            reviewUrl = result.Unmatched > 0 ? RecipeUrl(http, result.RecipeId) : null,
         };
 
         return result.WasKnown
@@ -262,6 +264,9 @@ public static class IngestEndpoints
             ))
         );
     }
+
+    private static string RecipeUrl(HttpContext http, int recipeId) =>
+        $"{http.Request.Scheme}://{http.Request.Host}/recipes/{recipeId}";
 
     private static string ReviewUrl(HttpContext http, long purchaseId) =>
         $"{http.Request.Scheme}://{http.Request.Host}/purchases/{purchaseId}/review";

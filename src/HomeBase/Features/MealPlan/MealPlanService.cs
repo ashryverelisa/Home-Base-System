@@ -237,7 +237,7 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
         await db
             .ShoppingListItems.OnList(list.Id)
             .Open()
-            .Where(i => i.AddedBy == ShoppingListItemOrigin.MealPlan)
+            .FromMealPlanOverlapping(from, to)
             .ExecuteDeleteAsync(ct);
 
         var added = 0;
@@ -258,6 +258,8 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
                         ProductId = productId,
                         Quantity = need.Missing,
                         AddedBy = ShoppingListItemOrigin.MealPlan,
+                        PlanFrom = from,
+                        PlanTo = to,
                     }
                 );
             }
@@ -269,6 +271,8 @@ public sealed class MealPlanService(IDbContextFactory<HomeBaseDbContext> factory
                         ListId = list.Id,
                         FreeText = need.Label,
                         AddedBy = ShoppingListItemOrigin.MealPlan,
+                        PlanFrom = from,
+                        PlanTo = to,
                     }
                 );
             }

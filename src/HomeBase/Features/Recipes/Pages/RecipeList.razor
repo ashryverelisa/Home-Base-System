@@ -48,6 +48,12 @@ else
                             <MudText Typo="Typo.caption">
                                 <span>@Localizer["Recipes.Servings", row.Servings]</span>
                                 <span> · @Localizer["Recipes.IngredientCount", row.IngredientCount]</span>
+                                @if (row.ReviewCount > 0)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text" Class="ml-1">
+                                        @Localizer["Recipes.ReviewBadge", row.ReviewCount]
+                                    </MudChip>
+                                }
                                 @if (row.TotalMinutes is { } minutes)
                                 {
                                     <span> · @Localizer["Recipes.Minutes", minutes]</span>

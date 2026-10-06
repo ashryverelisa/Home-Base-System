@@ -1,6 +1,7 @@
 using HomeBase.Database.Enums;
 using HomeBase.Features.Assets;
 using HomeBase.Features.Catalog;
+using HomeBase.Features.Common;
 using HomeBase.Features.Ingest;
 using HomeBase.Features.Inventory;
 using HomeBase.Features.MealPlan;
@@ -33,7 +34,8 @@ public class ReadModelTests
     private static StockLotView Lot(
         DateOnly? bestBefore,
         decimal quantity = 1m,
-        decimal? price = null
+        decimal? price = null,
+        StorageZone? zone = null
     ) =>
         new(
             1,
@@ -46,7 +48,7 @@ public class ReadModelTests
             null,
             null,
             null,
-            null,
+            zone,
             price
         );
 
@@ -111,6 +113,36 @@ public class ReadModelTests
     public void StockLotView_ExpiresSoon_FromTodayUntilWarningDays(int daysFromToday, bool expected)
     {
         Assert.Equal(expected, Lot(Today.AddDays(daysFromToday)).ExpiresSoon);
+    }
+
+    [Theory]
+    [InlineData(StockLotView.ExpiryWarningDays + 1, true)]
+    [InlineData(Zones.FreezerWarningDays, true)]
+    [InlineData(Zones.FreezerWarningDays + 1, false)]
+    public void StockLotView_InFreezer_WarnsWithLongerLeadTime(int daysFromToday, bool expected)
+    {
+        var lot = Lot(Today.AddDays(daysFromToday), zone: StorageZone.Freezer);
+
+        Assert.Equal(expected, lot.ExpiresSoon);
+    }
+
+    [Fact]
+    public void StockLotView_ExpiredInFreezer_IsExpiredNotSoon()
+    {
+        var lot = Lot(Today.AddDays(-1), zone: StorageZone.Freezer);
+
+        Assert.True(lot.IsExpired);
+        Assert.False(lot.ExpiresSoon);
+        Assert.True(lot.IsDueWithin(7));
+    }
+
+    [Theory]
+    [InlineData(StorageZone.Fridge, 7, true)]
+    [InlineData(StorageZone.Fridge, 8, false)]
+    [InlineData(StorageZone.Freezer, 8, true)]
+    public void StockLotView_IsDueWithin_RespectsZone(StorageZone zone, int daysFromToday, bool expected)
+    {
+        Assert.Equal(expected, Lot(Today.AddDays(daysFromToday), zone: zone).IsDueWithin(7));
     }
 
     [Fact]

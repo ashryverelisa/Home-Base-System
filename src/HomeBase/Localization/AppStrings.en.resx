@@ -1282,4 +1282,40 @@
   <data name="ShoppingListKind.Other" xml:space="preserve">
     <value>Other</value>
   </data>
+  <data name="Stock.Move" xml:space="preserve">
+    <value>Move</value>
+  </data>
+  <data name="Stock.MoveTo" xml:space="preserve">
+    <value>To</value>
+  </data>
+  <data name="Stock.NewBestBefore" xml:space="preserve">
+    <value>New best-before</value>
+  </data>
+  <data name="Stock.FreezeHint" xml:space="preserve">
+    <value>Freezing extends shelf life. Set the date once – the freezer warns 30 days ahead.</value>
+  </data>
+  <data name="Stock.ThawHint" xml:space="preserve">
+    <value>Thawed food keeps only briefly. Set a new date.</value>
+  </data>
+  <data name="Recipes.ReviewHint" xml:space="preserve">
+    <value>{0} ingredients were not matched to a product on import. Assign them so cooking books stock out, or keep them as text.</value>
+  </data>
+  <data name="Recipes.ReviewCreateProduct" xml:space="preserve">
+    <value>Create new product</value>
+  </data>
+  <data name="Recipes.ReviewProduct" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Recipes.ReviewAssign" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="Recipes.ReviewKeepText" xml:space="preserve">
+    <value>Keep as text</value>
+  </data>
+  <data name="Recipes.Unreviewed" xml:space="preserve">
+    <value>Unreviewed</value>
+  </data>
+  <data name="Recipes.ReviewBadge" xml:space="preserve">
+    <value>{0} to review</value>
+  </data>
 </root>

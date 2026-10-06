@@ -106,6 +106,48 @@ else
                 @Localizer["Recipes.IngredientsHint", _recipe.Servings]
             </MudText>
 
+            @if (_reviews.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-3">
+                    @Localizer["Recipes.ReviewHint", _reviews.Count]
+                    <MudLink Href="@($"/products/new?returnUrl=/recipes/{Id}")">@Localizer["Recipes.ReviewCreateProduct"]</MudLink>
+                </MudAlert>
+
+                <MudPaper Outlined="true" Class="mb-4">
+                    @foreach (var review in _reviews)
+                    {
+                        <div class="pa-3">
+                            <MudText Typo="Typo.body1"><b>@review.Text</b></MudText>
+                            <div class="d-flex flex-wrap align-center gap-2 mt-2">
+                                <MudAutocomplete T="ProductRow"
+                                                 Value="@_choices.GetValueOrDefault(review.IngredientId)"
+                                                 ValueChanged="@(row => _choices[review.IngredientId] = row)"
+                                                 SearchFunc="SearchProductsAsync"
+                                                 ToStringFunc="@(row => row?.Name ?? string.Empty)"
+                                                 Clearable="true"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 Label="@Localizer["Recipes.ReviewProduct"]"
+                                                 Style="min-width: 16rem"/>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           Disabled="@(_busy || _choices.GetValueOrDefault(review.IngredientId) is null)"
+                                           OnClick="@(() => AssignAsync(review))">
+                                    @Localizer["Recipes.ReviewAssign"]
+                                </MudButton>
+                                <MudButton Variant="Variant.Text"
+                                           Color="Color.Default"
+                                           Disabled="_busy"
+                                           OnClick="@(() => KeepAsTextAsync(review))">
+                                    @Localizer["Recipes.ReviewKeepText"]
+                                </MudButton>
+                            </div>
+                        </div>
+                        <MudDivider/>
+                    }
+                </MudPaper>
+            }
+
             @if (_ingredients.Count > 0)
             {
                 <MudPaper Outlined="true" Class="mb-4">
@@ -115,6 +157,12 @@ else
                             <div>
                                 <MudText Typo="Typo.body1">
                                     @ingredient.Label
+                                    @if (ingredient.NeedsReview)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Warning" Variant="Variant.Text">
+                                            @Localizer["Recipes.Unreviewed"]
+                                        </MudChip>
+                                    }
                                     @if (ingredient.IsOptional)
                                     {
                                         <MudChip T="string" Size="Size.Small" Class="ml-2" Variant="Variant.Text">

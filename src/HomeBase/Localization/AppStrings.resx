@@ -1282,4 +1282,40 @@
   <data name="ShoppingListKind.Other" xml:space="preserve">
     <value>Sonstiges</value>
   </data>
+  <data name="Stock.Move" xml:space="preserve">
+    <value>Umlagern</value>
+  </data>
+  <data name="Stock.MoveTo" xml:space="preserve">
+    <value>Nach</value>
+  </data>
+  <data name="Stock.NewBestBefore" xml:space="preserve">
+    <value>Neues MHD</value>
+  </data>
+  <data name="Stock.FreezeHint" xml:space="preserve">
+    <value>Einfrieren verlängert die Haltbarkeit. Setze das Datum einmal neu – in der Truhe wird 30 Tage vorher gewarnt.</value>
+  </data>
+  <data name="Stock.ThawHint" xml:space="preserve">
+    <value>Aufgetautes hält nur kurz. Setze das Datum neu.</value>
+  </data>
+  <data name="Recipes.ReviewHint" xml:space="preserve">
+    <value>{0} Zutaten wurden beim Import keinem Produkt zugeordnet. Ordne sie zu, damit der Bestand beim Kochen abgebucht wird, oder belasse sie als Text.</value>
+  </data>
+  <data name="Recipes.ReviewCreateProduct" xml:space="preserve">
+    <value>Neues Produkt anlegen</value>
+  </data>
+  <data name="Recipes.ReviewProduct" xml:space="preserve">
+    <value>Produkt</value>
+  </data>
+  <data name="Recipes.ReviewAssign" xml:space="preserve">
+    <value>Zuordnen</value>
+  </data>
+  <data name="Recipes.ReviewKeepText" xml:space="preserve">
+    <value>Als Text belassen</value>
+  </data>
+  <data name="Recipes.Unreviewed" xml:space="preserve">
+    <value>Ungeprüft</value>
+  </data>
+  <data name="Recipes.ReviewBadge" xml:space="preserve">
+    <value>{0} zu prüfen</value>
+  </data>
 </root>

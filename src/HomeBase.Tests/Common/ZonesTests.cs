@@ -38,4 +38,27 @@ public class ZonesTests
     {
         Assert.Equal(Icons.Material.Filled.HelpOutline, Zones.Icon(null));
     }
+
+    [Theory]
+    [InlineData(StorageZone.Fridge, 3, 3)]
+    [InlineData(StorageZone.Ambient, 14, 14)]
+    [InlineData(null, 3, 3)]
+    [InlineData(StorageZone.Freezer, 3, Zones.FreezerWarningDays)]
+    [InlineData(StorageZone.Freezer, 60, 60)]
+    public void WarningDays_FreezerGetsAtLeastItsOwnLeadTime(StorageZone? zone, int days, int expected)
+    {
+        Assert.Equal(expected, Zones.WarningDays(zone, days));
+    }
+
+    [Theory]
+    [InlineData(StorageZone.Fridge, StorageZone.Freezer, true)]
+    [InlineData(StorageZone.Freezer, StorageZone.Fridge, true)]
+    [InlineData(null, StorageZone.Freezer, true)]
+    [InlineData(StorageZone.Fridge, StorageZone.Ambient, false)]
+    [InlineData(StorageZone.Freezer, StorageZone.Freezer, false)]
+    [InlineData(StorageZone.Fridge, null, false)]
+    public void ChangesShelfLife_OnlyWhenFreezingOrThawing(StorageZone? from, StorageZone? to, bool expected)
+    {
+        Assert.Equal(expected, Zones.ChangesShelfLife(from, to));
+    }
 }

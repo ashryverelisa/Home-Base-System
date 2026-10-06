@@ -12,4 +12,5 @@ public class RecipeIngredient
     public decimal? QuantityBase { get; set; }
     public bool IsOptional { get; set; }
     public string? Note { get; set; }
+    public bool NeedsReview { get; set; }
 }

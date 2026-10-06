@@ -6,6 +6,16 @@ namespace HomeBase.Features.Common;
 
 public static class Zones
 {
+    public const int FreezerWarningDays = 30;
+
+    // Frozen goods keep for months; a fridge-sized lead time would come too late to plan thawing.
+    public static int WarningDays(StorageZone? zone, int days) =>
+        zone == StorageZone.Freezer ? Math.Max(days, FreezerWarningDays) : days;
+
+    // Freezing or thawing changes how long something keeps; the printed date no longer applies.
+    public static bool ChangesShelfLife(StorageZone? from, StorageZone? to) =>
+        (from == StorageZone.Freezer) != (to == StorageZone.Freezer);
+
     public static string Describe(StorageZone zone) =>
         AppStrings.Get(
             zone switch

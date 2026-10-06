@@ -1,4 +1,5 @@
-﻿using HomeBase.Database.Enums;
+﻿using HomeBase.Database.Entities;
+using HomeBase.Database.Enums;
 using HomeBase.Features.Common;
 using MudBlazor;
 
@@ -13,13 +14,33 @@ public partial class Stock
     private decimal _amount;
     private string? _message;
     private bool _busy;
+    private IReadOnlyList<StorageLocation> _locations = [];
+    private StockLotView? _moving;
+    private int? _moveLocationId;
+    private DateOnly? _moveBestBefore;
+
+    private StorageZone? MoveTargetZone =>
+        _locations.FirstOrDefault(l => l.Id == _moveLocationId)?.Zone;
+
+    private bool MoveChangesShelfLife =>
+        _moving is not null && Zones.ChangesShelfLife(_moving.LocationZone, MoveTargetZone);
+
+    private DateTime? MoveBestBeforeDate
+    {
+        get => _moveBestBefore?.ToDateTime(TimeOnly.MinValue);
+        set => _moveBestBefore = value is { } date ? DateOnly.FromDateTime(date) : null;
+    }
 
     private string MovementLabel =>
         Localizer[
             _activeType == StockMovementType.Waste ? "Stock.AmountWasted" : "Stock.AmountConsumed"
         ];
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _locations = await Catalog.GetLocationsAsync();
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -33,8 +54,43 @@ public partial class Stock
         await LoadAsync();
     }
 
+    private void BeginMove(StockLotView lot)
+    {
+        Cancel();
+        _moving = lot;
+        _moveLocationId = lot.LocationId;
+        _moveBestBefore = lot.BestBefore;
+    }
+
+    private void CancelMove() => _moving = null;
+
+    private async Task MoveAsync()
+    {
+        if (_moving is null)
+        {
+            return;
+        }
+
+        _busy = true;
+
+        try
+        {
+            await Inventory.MoveLotAsync(
+                new LotMove(_moving.LotId, _moveLocationId, MoveChangesShelfLife, _moveBestBefore)
+            );
+
+            _moving = null;
+            await LoadAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
     private void Begin(StockLotView lot, StockMovementType type)
     {
+        _moving = null;
         _active = lot;
         _activeType = type;
         _amount = 0;

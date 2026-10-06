@@ -1,5 +1,6 @@
 @page "/inventory"
 @inject IInventoryService Inventory
+@inject ICatalogService Catalog
 @inject IStringLocalizer<AppStrings> Localizer
 
 <PageTitle>@Localizer["Stock.Title"]</PageTitle>
@@ -94,6 +95,13 @@ else
                                    OnClick="() => Begin(lot, StockMovementType.Waste)">
                             @Localizer["Stock.Waste"]
                         </MudButton>
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.MoveDown"
+                                   OnClick="() => BeginMove(lot)">
+                            @Localizer["Stock.Move"]
+                        </MudButton>
                         @if (!lot.IsOpened)
                         {
                             <MudButton Size="Size.Small"
@@ -138,6 +146,52 @@ else
                             <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mt-3">
                                 @_message
                             </MudAlert>
+                        }
+                    }
+
+                    @if (_moving?.LotId == lot.LotId)
+                    {
+                        <MudDivider Class="my-3"/>
+
+                        <div class="d-flex flex-wrap align-center gap-2">
+                            <MudSelect T="int?"
+                                       @bind-Value="_moveLocationId"
+                                       Label="@Localizer["Stock.MoveTo"]"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Style="min-width: 14rem">
+                                <MudSelectItem T="int?" Value="@(null)">@Localizer["Stock.NoLocation"]</MudSelectItem>
+                                @foreach (var location in _locations)
+                                {
+                                    <MudSelectItem T="int?" Value="@(location.Id)">@LocationTree.Label(location)</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @if (MoveChangesShelfLife)
+                            {
+                                <MudDatePicker @bind-Date="MoveBestBeforeDate"
+                                               Label="@Localizer["Stock.NewBestBefore"]"
+                                               Variant="Variant.Outlined"
+                                               Margin="Margin.Dense"
+                                               Editable="true"
+                                               Clearable="true"
+                                               Style="max-width: 14rem"/>
+                            }
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Disabled="_busy"
+                                       OnClick="@MoveAsync">
+                                @Localizer["Stock.Move"]
+                            </MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="@CancelMove">
+                                @Localizer["Common.Cancel"]
+                            </MudButton>
+                        </div>
+
+                        @if (MoveChangesShelfLife)
+                        {
+                            <MudText Typo="Typo.caption" Class="d-block mt-2">
+                                @Localizer[MoveTargetZone == StorageZone.Freezer ? "Stock.FreezeHint" : "Stock.ThawHint"]
+                            </MudText>
                         }
                     }
                 </div>

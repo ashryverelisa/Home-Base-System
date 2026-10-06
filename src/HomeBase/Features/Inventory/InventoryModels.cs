@@ -2,6 +2,13 @@ using HomeBase.Database.Enums;
 
 namespace HomeBase.Features.Inventory;
 
+public sealed record LotMove(
+    long LotId,
+    int? LocationId,
+    bool ReplaceBestBefore = false,
+    DateOnly? BestBefore = null
+);
+
 public sealed record BookInRequest(
     int ProductId,
     decimal QuantityBase,
