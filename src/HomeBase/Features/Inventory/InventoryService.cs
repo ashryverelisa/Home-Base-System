@@ -32,12 +32,16 @@ public sealed class InventoryService(
 
         var today = time.Today();
 
-        lots = lots.DueBy(
-            today.AddDays(days),
-            today.AddDays(Zones.WarningDays(StorageZone.Freezer, days))
-        );
+        if (withinDays is { } days)
+        {
+            lots = lots.DueBy(
+                today.AddDays(days),
+                today.AddDays(Zones.WarningDays(StorageZone.Freezer, days))
+            );
+        }
 
-        return await lots.FirstExpiredFirstOut()
+        return await lots
+            .FirstExpiredFirstOut()
             .Select(StockLotView.Projection(today))
             .ToListAsync(ct);
     }
