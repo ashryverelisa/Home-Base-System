@@ -59,6 +59,15 @@ builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IRecipeIngestService, RecipeIngestService>();
 builder.Services.AddScoped<IMealPlanService, MealPlanService>();
 
+builder.Services.AddHttpClient<IOpenFoodFacts, OpenFoodFactsClient>(client =>
+{
+    client.BaseAddress = new Uri("https://world.openfoodfacts.org/");
+    client.Timeout = TimeSpan.FromSeconds(5);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(
+        "HomeBase/1.0 (+https://github.com/ashryverelisa/Home-Base-System)"
+    );
+});
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

@@ -1063,4 +1063,46 @@
   <data name="Reconnect.Resume" xml:space="preserve">
     <value>Fortsetzen</value>
   </data>
+  <data name="Scan.Button" xml:space="preserve">
+    <value>Barcode scannen</value>
+  </data>
+  <data name="Scan.Title" xml:space="preserve">
+    <value>Barcode scannen</value>
+  </data>
+  <data name="Scan.Hint" xml:space="preserve">
+    <value>Halte den Barcode ins Bild.</value>
+  </data>
+  <data name="Scan.Insecure" xml:space="preserve">
+    <value>Die Kamera ist nur über HTTPS oder localhost nutzbar. Gib den Code von Hand ein oder nutze einen Handscanner.</value>
+  </data>
+  <data name="Scan.Denied" xml:space="preserve">
+    <value>Kein Zugriff auf die Kamera. Gib den Code von Hand ein.</value>
+  </data>
+  <data name="Scan.Unavailable" xml:space="preserve">
+    <value>Kamera oder Barcode-Erkennung nicht verfügbar. Gib den Code von Hand ein.</value>
+  </data>
+  <data name="Scan.Manual" xml:space="preserve">
+    <value>Code eingeben</value>
+  </data>
+  <data name="Scan.Invalid" xml:space="preserve">
+    <value>Kein gültiger EAN-/GTIN-Code.</value>
+  </data>
+  <data name="Scan.Use" xml:space="preserve">
+    <value>Übernehmen</value>
+  </data>
+  <data name="OpenFoodFacts.Load" xml:space="preserve">
+    <value>Von Open Food Facts laden</value>
+  </data>
+  <data name="OpenFoodFacts.Applied" xml:space="preserve">
+    <value>Angaben von Open Food Facts übernommen.</value>
+  </data>
+  <data name="OpenFoodFacts.NotFound" xml:space="preserve">
+    <value>Open Food Facts kennt den Code {0} nicht.</value>
+  </data>
+  <data name="OpenFoodFacts.Unavailable" xml:space="preserve">
+    <value>Open Food Facts ist gerade nicht erreichbar.</value>
+  </data>
+  <data name="ProductEdit.GtinExists" xml:space="preserve">
+    <value>Zu diesem Code gibt es schon ein Produkt:</value>
+  </data>
 </root>

@@ -2,6 +2,7 @@
 @inject IInventoryService Inventory
 @inject ICatalogService Catalog
 @inject NavigationManager Navigation
+@inject IDialogService Dialogs
 @inject IStringLocalizer<AppStrings> Localizer
 
 <PageTitle>@Localizer["BookIn.Title"]</PageTitle>
@@ -10,6 +11,16 @@
 
 @if (_selected is null)
 {
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               FullWidth="true"
+               StartIcon="@Icons.Material.Filled.QrCodeScanner"
+               OnClick="@ScanAsync"
+               Class="mb-4">
+        @Localizer["Scan.Button"]
+    </MudButton>
+
     <MudTextField T="string"
                   Value="_term"
                   ValueChanged="SearchAsync"
@@ -31,7 +42,7 @@
     {
         <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
             @Localizer["BookIn.NoMatch"]
-            <MudLink Href="/products/new">@Localizer["BookIn.CreateProduct"]</MudLink>
+            <MudLink Href="@NewProductHref(Gtin.Normalize(_term))">@Localizer["BookIn.CreateProduct"]</MudLink>
         </MudAlert>
     }
     else
@@ -69,7 +80,7 @@ else
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Default"
                        StartIcon="@Icons.Material.Filled.SwapHoriz"
-                       OnClick="@Reset">
+                       OnClick="@ResetAsync">
                 @Localizer["BookIn.OtherProduct"]
             </MudButton>
         </div>

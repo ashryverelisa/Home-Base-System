@@ -1,6 +1,9 @@
 @page "/products/new"
 @page "/products/{Id:int}"
 @inject ICatalogService Catalog
+@inject IOpenFoodFacts OpenFoodFacts
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> Localizer
 
@@ -19,6 +22,16 @@ else
 
         <MudPaper Outlined="true" Class="pa-4">
             <MudGrid Spacing="3">
+                @if (_product.ImageUrl is not null)
+                {
+                    <MudItem xs="12" Class="d-flex justify-center">
+                        <MudImage Src="@_product.ImageUrl"
+                                  Alt="@_product.Name"
+                                  Height="120"
+                                  ObjectFit="ObjectFit.Contain"/>
+                    </MudItem>
+                }
+
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_product.Name"
                                   Label="@Localizer["ProductEdit.Name"]"
@@ -35,8 +48,40 @@ else
                     <MudTextField @bind-Value="_product.Gtin"
                                   Label="@Localizer["ProductEdit.Gtin"]"
                                   Variant="Variant.Outlined"
-                                  InputMode="InputMode.numeric"/>
+                                  InputMode="InputMode.numeric"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@Icons.Material.Filled.QrCodeScanner"
+                                  AdornmentAriaLabel="@Localizer["Scan.Button"]"
+                                  OnAdornmentClick="@ScanAsync"/>
+                    @if (Gtin.Normalize(_product.Gtin) is not null)
+                    {
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.CloudDownload"
+                                   Disabled="_lookingUp"
+                                   OnClick="@LoadFromOpenFoodFactsAsync"
+                                   Class="mt-1">
+                            @Localizer["OpenFoodFacts.Load"]
+                        </MudButton>
+                    }
                 </MudItem>
+
+                @if (_lookingUp)
+                {
+                    <MudItem xs="12">
+                        <MudProgressLinear Indeterminate="true" Color="Color.Primary"/>
+                    </MudItem>
+                }
+
+                @if (_existing is not null)
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                            @Localizer["ProductEdit.GtinExists"]
+                            <MudLink Href="@($"/products/{_existing.Id}")">@_existing.Name</MudLink>
+                        </MudAlert>
+                    </MudItem>
+                }
 
                 <MudItem xs="12" sm="6">
                     <MudSelect @bind-Value="_product.CategoryId"
@@ -133,7 +178,7 @@ else
                        Disabled="_saving">
                 @Localizer["Common.Save"]
             </MudButton>
-            <MudButton Href="/products"
+            <MudButton Href="@BackHref"
                        Variant="Variant.Outlined"
                        Color="Color.Default"
                        Size="Size.Large">

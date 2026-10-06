@@ -1,10 +1,18 @@
-﻿using HomeBase.Database.Entities;
+﻿using HomeBase.Components.Shared;
+using HomeBase.Database.Entities;
 using HomeBase.Features.Catalog;
+using HomeBase.Features.Common;
+using Microsoft.AspNetCore.Components;
 
 namespace HomeBase.Features.Inventory.Pages;
 
 public partial class BookIn
 {
+    private const string Self = "/inventory/book-in";
+
+    [SupplyParameterFromQuery]
+    public int? ProductId { get; set; }
+
     private IReadOnlyList<ProductRow>? _matches;
     private IReadOnlyList<StorageLocation> _locations = [];
     private Product? _selected;
@@ -31,13 +39,47 @@ public partial class BookIn
     {
         _locations = await Catalog.GetLocationsAsync();
         _matches = await Catalog.SearchAsync();
+
+        if (ProductId is { } productId)
+        {
+            await SelectAsync(productId);
+        }
     }
 
     private async Task SearchAsync(string? value)
     {
         _term = value ?? string.Empty;
+
+        if (Gtin.Normalize(_term) is { } gtin && await Catalog.FindByGtinAsync(gtin) is { } hit)
+        {
+            await SelectAsync(hit.Id);
+            return;
+        }
+
         _matches = await Catalog.SearchAsync(_term);
     }
+
+    private async Task ScanAsync()
+    {
+        if (await BarcodeScanDialog.ShowAsync(Dialogs) is not { } gtin)
+        {
+            return;
+        }
+
+        if (await Catalog.FindByGtinAsync(gtin) is { } product)
+        {
+            await SelectAsync(product.Id);
+            return;
+        }
+
+        Navigation.NavigateTo(NewProductHref(gtin));
+    }
+
+    private string NewProductHref(string? gtin) =>
+        Navigation.GetUriWithQueryParameters(
+            "/products/new",
+            new Dictionary<string, object?> { ["gtin"] = gtin, ["returnUrl"] = Self }
+        );
 
     private async Task SelectAsync(int productId)
     {
@@ -67,10 +109,12 @@ public partial class BookIn
         }
     }
 
-    private void Reset()
+    private async Task ResetAsync()
     {
         _selected = null;
+        _term = string.Empty;
         _error = null;
+        _matches = await Catalog.SearchAsync();
     }
 
     private async Task SaveAsync()

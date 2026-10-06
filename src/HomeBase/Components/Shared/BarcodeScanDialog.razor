@@ -1,0 +1,46 @@
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+@inject IStringLocalizer<AppStrings> Localizer
+
+<MudDialog>
+    <DialogContent>
+        @switch (_status)
+        {
+            case ScanStatus.Starting:
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3"/>
+                break;
+            case ScanStatus.Running:
+                <MudText Typo="Typo.body2" Class="mb-2">@Localizer["Scan.Hint"]</MudText>
+                break;
+            default:
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-3">@StatusMessage</MudAlert>
+                break;
+        }
+
+        <video @ref="_video"
+               class="barcode-video"
+               style="@(_status is ScanStatus.Running ? null : "display:none")"
+               muted
+               playsinline></video>
+
+        <MudTextField T="string"
+                      @bind-Value="_manual"
+                      Label="@Localizer["Scan.Manual"]"
+                      Variant="Variant.Outlined"
+                      InputMode="InputMode.numeric"
+                      Immediate="true"
+                      Error="_invalid"
+                      ErrorText="@Localizer["Scan.Invalid"]"
+                      OnKeyUp="@OnManualKeyUp"
+                      Class="mt-3"/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel">@Localizer["Common.Cancel"]</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="string.IsNullOrWhiteSpace(_manual)"
+                   OnClick="@UseManual">
+            @Localizer["Scan.Use"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
