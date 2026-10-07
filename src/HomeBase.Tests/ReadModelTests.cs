@@ -269,6 +269,7 @@ public class ReadModelTests
             null,
             ShoppingListItemStatus.Open,
             ShoppingListItemOrigin.AutoRestock,
+            null,
             null
         );
 

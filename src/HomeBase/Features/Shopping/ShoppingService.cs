@@ -78,6 +78,11 @@ public sealed class ShoppingService(
         CancellationToken ct = default
     )
     {
+        if (!TryNormalizeLink(request.Link, out var link))
+        {
+            return SaveResult.Failed<long>(localizer["Shopping.LinkInvalid"]);
+        }
+
         await using var db = await factory.CreateDbContextAsync(ct);
 
         var existing = await db.ShoppingListItems.OpenForProductAsync(
@@ -100,6 +105,11 @@ public sealed class ShoppingService(
 
             existing.Priority = Math.Max(existing.Priority, (int)request.Priority);
 
+            if (link is not null)
+            {
+                existing.Link = link;
+            }
+
             await db.SaveChangesAsync(ct);
 
             return SaveResult.Ok(existing.Id);
@@ -113,6 +123,7 @@ public sealed class ShoppingService(
             TargetPrice = NormalizePrice(request.TargetPrice),
             Priority = (int)request.Priority,
             Note = request.Note,
+            Link = link,
             AddedBy = request.Origin,
         };
 
@@ -134,6 +145,11 @@ public sealed class ShoppingService(
             return SaveResult.Failed<long>(localizer["Shopping.TextRequired"]);
         }
 
+        if (!TryNormalizeLink(request.Link, out var link))
+        {
+            return SaveResult.Failed<long>(localizer["Shopping.LinkInvalid"]);
+        }
+
         await using var db = await factory.CreateDbContextAsync(ct);
 
         var item = new ShoppingListItem
@@ -145,6 +161,7 @@ public sealed class ShoppingService(
             TargetPrice = NormalizePrice(request.TargetPrice),
             Priority = (int)request.Priority,
             Note = request.Note,
+            Link = link,
             AddedBy = request.Origin,
         };
 
@@ -183,6 +200,22 @@ public sealed class ShoppingService(
 
     public Task SetTargetPriceAsync(long itemId, decimal? price, CancellationToken ct = default) =>
         UpdateItemAsync(itemId, item => item.TargetPrice = NormalizePrice(price), ct);
+
+    public async Task<SaveResult> SetLinkAsync(
+        long itemId,
+        string? link,
+        CancellationToken ct = default
+    )
+    {
+        if (!TryNormalizeLink(link, out var normalized))
+        {
+            return SaveResult.Failed(localizer["Shopping.LinkInvalid"]);
+        }
+
+        await UpdateItemAsync(itemId, item => item.Link = normalized, ct);
+
+        return SaveResult.Ok();
+    }
 
     public Task SetPriorityAsync(
         long itemId,
@@ -319,6 +352,34 @@ public sealed class ShoppingService(
 
     internal static decimal? NormalizePrice(decimal? price) =>
         price is > 0 ? Math.Round(price.Value, 2, MidpointRounding.AwayFromZero) : null;
+
+    // Accepts pasted shop links with or without scheme; only http(s) so the link is safe to render as href.
+    internal static bool TryNormalizeLink(string? input, out string? link)
+    {
+        link = null;
+
+        if (input.TrimToNull() is not { } text)
+        {
+            return true;
+        }
+
+        var candidate = text.Contains("://", StringComparison.Ordinal) ? text : $"https://{text}";
+
+        if (
+            candidate.Length > MaxLinkLength
+            || !Uri.TryCreate(candidate, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            || string.IsNullOrEmpty(uri.Host)
+        )
+        {
+            return false;
+        }
+
+        link = candidate;
+        return true;
+    }
+
+    private const int MaxLinkLength = 2000;
 
     internal static decimal WholePackages(decimal missing, decimal packageSize) =>
         packageSize > 0 ? Math.Ceiling(missing / packageSize) * packageSize : missing;

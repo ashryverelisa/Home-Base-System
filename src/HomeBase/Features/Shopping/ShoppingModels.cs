@@ -9,7 +9,8 @@ public sealed record AddProductRequest(
     string? Note = null,
     ShoppingListItemOrigin Origin = ShoppingListItemOrigin.User,
     decimal? TargetPrice = null,
-    ShoppingPriority Priority = ShoppingPriority.Normal
+    ShoppingPriority Priority = ShoppingPriority.Normal,
+    string? Link = null
 );
 
 public sealed record AddFreeTextRequest(
@@ -20,5 +21,6 @@ public sealed record AddFreeTextRequest(
     decimal? TargetPrice = null,
     string? Note = null,
     ShoppingListItemOrigin Origin = ShoppingListItemOrigin.User,
-    ShoppingPriority Priority = ShoppingPriority.Normal
+    ShoppingPriority Priority = ShoppingPriority.Normal,
+    string? Link = null
 );

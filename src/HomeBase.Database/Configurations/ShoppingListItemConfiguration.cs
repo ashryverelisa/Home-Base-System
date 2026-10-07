@@ -23,6 +23,7 @@ public class ShoppingListItemConfiguration : IEntityTypeConfiguration<ShoppingLi
         builder.Property(x => x.FreeText).HasMaxLength(200);
         builder.Property(x => x.Unit).HasMaxLength(20);
         builder.Property(x => x.Note).HasMaxLength(500);
+        builder.Property(x => x.Link).HasMaxLength(2000);
 
         builder.Property(x => x.Quantity).HasPrecision(12, 3);
         builder.Property(x => x.TargetPrice).HasPrecision(12, 2);

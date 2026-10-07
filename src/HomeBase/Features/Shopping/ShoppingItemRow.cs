@@ -18,7 +18,8 @@ public sealed record ShoppingItemRow(
     decimal? TargetPrice,
     ShoppingListItemStatus Status,
     ShoppingListItemOrigin AddedBy,
-    string? Note
+    string? Note,
+    string? Link
 )
 {
     public static readonly Expression<Func<ShoppingListItem, ShoppingItemRow>> Projection =
@@ -36,7 +37,8 @@ public sealed record ShoppingItemRow(
             item.TargetPrice,
             item.Status,
             item.AddedBy,
-            item.Note
+            item.Note,
+            item.Link
         );
 
     public decimal? StockBase { get; init; }

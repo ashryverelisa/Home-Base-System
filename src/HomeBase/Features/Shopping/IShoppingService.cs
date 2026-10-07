@@ -29,6 +29,8 @@ public interface IShoppingService
 
     Task SetTargetPriceAsync(long itemId, decimal? price, CancellationToken ct = default);
 
+    Task<SaveResult> SetLinkAsync(long itemId, string? link, CancellationToken ct = default);
+
     Task SetPriorityAsync(long itemId, ShoppingPriority priority, CancellationToken ct = default);
 
     Task ToggleImportantAsync(long itemId, CancellationToken ct = default);

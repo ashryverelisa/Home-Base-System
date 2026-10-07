@@ -412,6 +412,18 @@
   <data name="Shopping.TextRequired" xml:space="preserve">
     <value>Bitte etwas eintragen oder ein Produkt wählen.</value>
   </data>
+  <data name="Shopping.Link" xml:space="preserve">
+    <value>Link</value>
+  </data>
+  <data name="Shopping.OpenLink" xml:space="preserve">
+    <value>Link öffnen</value>
+  </data>
+  <data name="Shopping.LinkPlaceholder" xml:space="preserve">
+    <value>Link zum Artikel</value>
+  </data>
+  <data name="Shopping.LinkInvalid" xml:space="preserve">
+    <value>Der Link ist ungültig bitte eine Web-Adresse (http/https) eintragen.</value>
+  </data>
   <data name="Purchases.Title" xml:space="preserve">
     <value>Einkäufe</value>
   </data>

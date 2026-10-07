@@ -16,6 +16,7 @@ public sealed partial class ShoppingLists
     private string _term = string.Empty;
     private decimal? _quantity;
     private decimal? _price;
+    private string? _link;
     private ShoppingPriority _priority = ShoppingPriority.Normal;
     private int _listId;
     private bool _showSettled;
@@ -42,6 +43,7 @@ public sealed partial class ShoppingLists
         _picked = null;
         _term = string.Empty;
         _price = null;
+        _link = null;
         _priority = ShoppingPriority.Normal;
         _error = null;
 
@@ -78,6 +80,7 @@ public sealed partial class ShoppingLists
         {
             var price = TracksPrices ? _price : null;
             var priority = TracksPrices ? _priority : ShoppingPriority.Normal;
+            var link = TracksPrices ? _link : null;
 
             var result = _picked is { } product
                 ? await Shopping.AddProductAsync(
@@ -86,7 +89,8 @@ public sealed partial class ShoppingLists
                         product.Id,
                         _quantity > 0 ? _quantity : null,
                         TargetPrice: price,
-                        Priority: priority
+                        Priority: priority,
+                        Link: link
                     )
                 )
                 : await Shopping.AddFreeTextAsync(
@@ -95,7 +99,8 @@ public sealed partial class ShoppingLists
                         _term,
                         Quantity: TracksPrices && _quantity > 0 ? _quantity : null,
                         TargetPrice: price,
-                        Priority: priority
+                        Priority: priority,
+                        Link: link
                     )
                 );
 
@@ -109,6 +114,7 @@ public sealed partial class ShoppingLists
             _term = string.Empty;
             _quantity = null;
             _price = null;
+            _link = null;
             _priority = ShoppingPriority.Normal;
 
             await LoadItemsAsync();
@@ -136,6 +142,14 @@ public sealed partial class ShoppingLists
     private async Task SetPriceAsync(ShoppingItemRow item, decimal? price)
     {
         await Shopping.SetTargetPriceAsync(item.Id, price);
+        await LoadItemsAsync();
+    }
+
+    private async Task SetLinkAsync(ShoppingItemRow item, string? link)
+    {
+        var result = await Shopping.SetLinkAsync(item.Id, link);
+        _error = result.Error;
+
         await LoadItemsAsync();
     }
 

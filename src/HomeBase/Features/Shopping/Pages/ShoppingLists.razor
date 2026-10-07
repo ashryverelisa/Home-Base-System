@@ -43,6 +43,7 @@ else
                         <th style="width: 9rem">@Localizer["Shopping.Column.Quantity"]</th>
                         <th style="width: 10rem">@Localizer["Shopping.Priority"]</th>
                         <th style="width: 9rem">@Localizer["Shopping.Price"]</th>
+                        <th style="width: 16rem">@Localizer["Shopping.Link"]</th>
                         <th style="width: 3rem"></th>
                     </tr>
                 </thead>
@@ -59,6 +60,16 @@ else
                             <td>
                                 <MudText Typo="Typo.body1">
                                     <b>@item.Label</b>
+                                    @if (item.Link is { } link)
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                                       Size="Size.Small"
+                                                       Color="Color.Primary"
+                                                       Href="@link"
+                                                       Target="_blank"
+                                                       Rel="noopener noreferrer"
+                                                       title="@Localizer["Shopping.OpenLink"]"/>
+                                    }
                                     @if (item.IsAutomatic)
                                     {
                                         <MudChip T="string" Size="Size.Small" Class="ml-2" Color="Color.Warning" Variant="Variant.Text">
@@ -105,6 +116,14 @@ else
                                                  AdornmentText="€"/>
                             </td>
                             <td>
+                                <MudTextField T="string"
+                                              Value="item.Link"
+                                              ValueChanged="@(value => SetLinkAsync(item, value))"
+                                              Margin="Margin.Dense"
+                                              InputType="InputType.Url"
+                                              Placeholder="https://…"/>
+                            </td>
+                            <td>
                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                Color="Color.Default"
                                                Size="Size.Small"
@@ -117,7 +136,7 @@ else
                     @if (_items.Count == 0)
                     {
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <MudText Typo="Typo.body2">@Localizer["Shopping.Empty"]</MudText>
                             </td>
                         </tr>
@@ -188,6 +207,15 @@ else
                                              AdornmentText="€"/>
                         </td>
                         <td>
+                            <MudTextField T="string"
+                                          @bind-Value="_link"
+                                          Immediate="true"
+                                          OnKeyDown="@OnAddKeyDownAsync"
+                                          Margin="Margin.Dense"
+                                          InputType="InputType.Url"
+                                          Placeholder="@Localizer["Shopping.LinkPlaceholder"]"/>
+                        </td>
+                        <td>
                             <MudIconButton Icon="@Icons.Material.Filled.AddCircle"
                                            Color="Color.Primary"
                                            Size="Size.Small"
@@ -208,7 +236,7 @@ else
                         <td>
                             <MudText Typo="Typo.body1"><b>@Units.Money(CurrentList?.OpenTotal ?? 0)</b></MudText>
                         </td>
-                        <td></td>
+                        <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </MudSimpleTable>
@@ -377,6 +405,15 @@ else
                             <MudText Typo="Typo.body1" Style="text-decoration: line-through">@item.Label</MudText>
                             <MudText Typo="Typo.caption">@Describe(item)</MudText>
                         </div>
+                        @if (TracksPrices && item.Link is { } settledLink)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                           Size="Size.Small"
+                                           Href="@settledLink"
+                                           Target="_blank"
+                                           Rel="noopener noreferrer"
+                                           title="@Localizer["Shopping.OpenLink"]"/>
+                        }
                         @if (TracksPrices && item.TargetPrice is { } settledPrice)
                         {
                             <MudText Typo="Typo.body2">@Units.Money(settledPrice)</MudText>

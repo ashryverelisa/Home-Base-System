@@ -17,6 +17,7 @@ public class ShoppingListItem
     public ShoppingListItemStatus Status { get; set; } = ShoppingListItemStatus.Open;
     public ShoppingListItemOrigin AddedBy { get; set; } = ShoppingListItemOrigin.User;
     public string? Note { get; set; }
+    public string? Link { get; set; }
     public DateTimeOffset AddedAt { get; set; }
     public DateTimeOffset? BoughtAt { get; set; }
     public long? PurchaseItemId { get; set; }
